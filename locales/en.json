@@ -1,0 +1,5 @@
+{
+    "welcome": "Welcome to our application!",
+    "hello_name": "Hello, {{.Name}}!",
+    "sukses": "Operation successful"
+}
