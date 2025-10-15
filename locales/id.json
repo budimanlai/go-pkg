@@ -1,0 +1,6 @@
+{
+    "welcome": "Selamat datang di aplikasi kami!",
+    "hello_name": "Halo, {{.Name}}!",
+    "selamat_pagi": "Selamat pagi",
+    "sukses": "Operasi berhasil"
+}

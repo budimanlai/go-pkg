@@ -1,0 +1,5 @@
+{
+    "welcome": "欢迎",
+    "hello_name": "你好，{{.Name}}!",
+    "sukses": "操作成功"
+}
