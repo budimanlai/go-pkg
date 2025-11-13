@@ -193,19 +193,120 @@ Mengembalikan not found dengan pesan yang diterjemahkan.
 func NotFoundI18n(c *fiber.Ctx, messageID string) error
 ```
 
+### ValidationErrorI18n
+
+Mengembalikan validation error dengan detail field errors. Fungsi ini khusus untuk menangani error dari validator package.
+
+```go
+func ValidationErrorI18n(c *fiber.Ctx, err error) error
+```
+
+**Contoh:**
+
+```go
+import (
+    "github.com/budimanlai/go-pkg/response"
+    "github.com/budimanlai/go-pkg/validator"
+)
+
+app.Post("/users", func(c *fiber.Ctx) error {
+    var user User
+    if err := c.BodyParser(&user); err != nil {
+        return response.BadRequest(c, "Invalid request body")
+    }
+
+    // Validasi dan return response otomatis
+    if err := validator.ValidateStructWithContext(c, user); err != nil {
+        return response.ValidationErrorI18n(c, err)
+    }
+
+    // Proses user...
+    return response.Success(c, "User created successfully", user)
+})
+```
+
+**Output (dengan validation error):**
+
+```json
+{
+    "meta": {
+        "success": false,
+        "message": "Email is required",
+        "errors": {
+            "Email": [
+                "Email is required",
+                "Email must be a valid email address"
+            ],
+            "Password": [
+                "Password must be at least 8 characters"
+            ],
+            "Age": [
+                "Age must be greater than or equal to 18"
+            ]
+        }
+    },
+    "data": null
+}
+```
+
+**Keunggulan:**
+- Pesan error otomatis menggunakan bahasa dari context (i18n)
+- Field errors terstruktur per field untuk UI form validation
+- `meta.message` berisi first error sebagai summary
+- `meta.errors` berisi detail semua error per field
+- Return status code 400 (Bad Request)
+
 ## Bahasa Context
 
-Fungsi i18n menggunakan bahasa dari `c.Locals("language")`. Jika tidak ada, akan fallback ke bahasa default dari I18nManager.
+Fungsi i18n menggunakan bahasa dari `c.Locals("lang")`. Jika tidak ada, akan fallback ke bahasa default dari I18nManager.
 
 Untuk set bahasa, Anda bisa menggunakan middleware i18n atau set manual:
 
 ```go
-c.Locals("language", "id") // Set bahasa Indonesia
+c.Locals("lang", "id") // Set bahasa Indonesia
+```
+
+Atau gunakan `i18n.I18nMiddleware` yang otomatis detect bahasa dari:
+1. Query parameter `?lang=id`
+2. Header `Accept-Language`
+3. Default language
+
+```go
+import "github.com/budimanlai/go-pkg/i18n"
+
+app.Use(i18n.I18nMiddleware(i18nConfig))
 ```
 
 ## Contoh Lengkap
 
-Lihat `tests/main.go` untuk contoh penggunaan lengkap:
+### Contoh 1: Response Standar
+
+```go
+package main
+
+import (
+    "github.com/budimanlai/go-pkg/response"
+    "github.com/gofiber/fiber/v2"
+)
+
+func main() {
+    app := fiber.New()
+
+    app.Get("/", func(c *fiber.Ctx) error {
+        return response.Success(c, "Success", map[string]string{"foo": "bar"})
+    })
+
+    app.Get("/error", func(c *fiber.Ctx) error {
+        return response.BadRequest(c, "Invalid request")
+    })
+
+    app.Listen(":3000")
+}
+```
+
+### Contoh 2: Response dengan I18n
+
+Lihat `tests/main.go` untuk contoh penggunaan lengkap dengan i18n:
 
 ```go
 package main
@@ -242,6 +343,73 @@ func main() {
 
     app.Listen(":3000")
 }
+```
+
+### Contoh 3: Validation dengan Response
+
+```go
+package main
+
+import (
+    "github.com/budimanlai/go-pkg/i18n"
+    "github.com/budimanlai/go-pkg/response"
+    "github.com/budimanlai/go-pkg/validator"
+    "github.com/gofiber/fiber/v2"
+    "golang.org/x/text/language"
+)
+
+type User struct {
+    Name     string `json:"name" validate:"required"`
+    Email    string `json:"email" validate:"required,email"`
+    Password string `json:"password" validate:"required,min=8"`
+    Age      int    `json:"age" validate:"gte=18,lte=130"`
+}
+
+func main() {
+    // Setup I18n
+    i18nConfig := i18n.I18nConfig{
+        DefaultLanguage: language.English,
+        SupportedLangs:  []string{"en", "id", "zh"},
+        LocalesPath:     "locales",
+    }
+
+    app := fiber.New()
+    
+    i18nManager, err := i18n.NewI18nManager(i18nConfig)
+    if err != nil {
+        panic(err)
+    }
+    
+    // Set i18n untuk response dan validator
+    response.SetI18nManager(i18nManager)
+    validator.SetI18nManager(i18nManager)
+    
+    // Use i18n middleware
+    app.Use(i18n.I18nMiddleware(i18nConfig))
+
+    // Create user endpoint
+    app.Post("/users", func(c *fiber.Ctx) error {
+        var user User
+        if err := c.BodyParser(&user); err != nil {
+            return response.BadRequest(c, "Invalid request body")
+        }
+
+        // Validate with automatic language detection and detailed errors
+        if err := validator.ValidateStructWithContext(c, user); err != nil {
+            return response.ValidationErrorI18n(c, err)
+        }
+
+        // Process user creation...
+        return response.Success(c, "User created successfully", user)
+    })
+
+    app.Listen(":3000")
+}
+
+// Test dengan curl:
+// English: curl -X POST http://localhost:3000/users?lang=en -d '{"name":"","email":"invalid"}'
+// Indonesian: curl -X POST http://localhost:3000/users?lang=id -d '{"name":"","email":"invalid"}'
+// Chinese: curl -X POST http://localhost:3000/users?lang=zh -d '{"name":"","email":"invalid"}'
 ```
 
 ## Testing

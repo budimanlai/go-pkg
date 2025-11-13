@@ -167,7 +167,7 @@ func SuccessI18n(c *fiber.Ctx, messageID string, data interface{}) error {
 //
 // Example:
 //
-//	if err := validator.ValidateStructWithContext(user, c); err != nil {
+//	if err := validator.ValidateStructWithContext(c, user); err != nil {
 //	    return response.ValidationErrorI18n(c, err)
 //	}
 func ValidationErrorI18n(c *fiber.Ctx, err error) error {

@@ -280,8 +280,8 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 // Otherwise, it falls back to DefaultMessages (English).
 //
 // Parameters:
-//   - s: The struct to validate (must have validation tags)
 //   - c: *fiber.Ctx - The Fiber context containing language information
+//   - s: The struct to validate (must have validation tags)
 //
 // Returns:
 //   - error: nil if validation succeeds, *ValidationError if validation fails
@@ -294,7 +294,7 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 //	        return err
 //	    }
 //
-//	    if err := ValidateStructWithContext(user, c); err != nil {
+//	    if err := ValidateStructWithContext(c, user); err != nil {
 //	        if verr, ok := err.(*ValidationError); ok {
 //	            return c.Status(400).JSON(fiber.Map{
 //	                "error": verr.First(),
@@ -304,7 +304,7 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 //
 //	    return c.JSON(user)
 //	})
-func ValidateStructWithContext(s interface{}, c *fiber.Ctx) error {
+func ValidateStructWithContext(c *fiber.Ctx, s interface{}) error {
 	lang := getLanguageFromContext(c)
 	return ValidateStructWithLang(s, lang)
 }

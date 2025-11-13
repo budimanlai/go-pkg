@@ -133,7 +133,7 @@ app.Post("/users", func(c *fiber.Ctx) error {
     // 1. Query parameter ?lang=id
     // 2. Header Accept-Language
     // 3. Default language
-    if err := validator.ValidateStructWithContext(user, c); err != nil {
+    if err := validator.ValidateStructWithContext(c, user); err != nil {
         if valErr, ok := err.(*validator.ValidationError); ok {
             return c.Status(400).JSON(fiber.Map{
                 "success": false,
@@ -154,6 +154,7 @@ app.Post("/users", func(c *fiber.Ctx) error {
 - Jika validasi berhasil, `err` adalah `nil`.
 - Jika gagal, `err` adalah `*ValidationError` dengan pesan error dalam bahasa yang dipilih.
 - Gunakan `err.First()` untuk error pertama, `err.All()` untuk semua error.
+- Gunakan `err.GetFieldErrors()` untuk error per field (berguna untuk UI).
 
 ```go
 if err := validator.ValidateStruct(user); err != nil {
@@ -168,7 +169,68 @@ if err := validator.ValidateStruct(user); err != nil {
         
         // Get error as string (all errors joined with semicolon)
         fmt.Println(valErr.Error())
+        
+        // Get errors by field (untuk UI form validation)
+        fieldErrors := valErr.GetFieldErrors()
+        for field, messages := range fieldErrors {
+            fmt.Printf("Field %s errors:\n", field)
+            for _, msg := range messages {
+                fmt.Printf("  - %s\n", msg)
+            }
+        }
+        // Output:
+        // Field Email errors:
+        //   - Email is required
+        //   - Email must be a valid email address
+        // Field Password errors:
+        //   - Password must be at least 8 characters
     }
+}
+```
+
+### 5. Integrasi dengan Response Package
+
+Untuk API, gunakan `response.ValidationErrorI18n()` yang secara otomatis menggunakan bahasa dari context dan mengembalikan JSON dengan detail field errors:
+
+```go
+import (
+    "github.com/budimanlai/go-pkg/response"
+    "github.com/budimanlai/go-pkg/validator"
+)
+
+app.Post("/users", func(c *fiber.Ctx) error {
+    var user User
+    if err := c.BodyParser(&user); err != nil {
+        return response.BadRequest(c, "Invalid request body")
+    }
+
+    // Validasi dengan response otomatis
+    if err := validator.ValidateStructWithContext(c, user); err != nil {
+        return response.ValidationErrorI18n(c, err)
+    }
+
+    // Proses user...
+    return response.Success(c, user)
+})
+```
+
+Response JSON:
+```json
+{
+    "meta": {
+        "success": false,
+        "message": "Email is required",
+        "errors": {
+            "Email": [
+                "Email is required",
+                "Email must be a valid email address"
+            ],
+            "Password": [
+                "Password must be at least 8 characters"
+            ]
+        }
+    },
+    "data": null
 }
 ```
 
@@ -178,7 +240,7 @@ if err := validator.ValidateStruct(user); err != nil {
 |--------|--------|----------|
 | `ValidateStruct(s)` | Default dari i18nManager atau "en" | Validasi tanpa perlu specify bahasa |
 | `ValidateStructWithLang(s, lang)` | Explicit dari parameter | Validasi dengan bahasa spesifik |
-| `ValidateStructWithContext(s, c)` | Dari Fiber context | API endpoint dengan I18nMiddleware |
+| `ValidateStructWithContext(c, s)` | Dari Fiber context | API endpoint dengan I18nMiddleware |
 
 ### Contoh Penggunaan Lengkap dengan Fiber
 
@@ -210,7 +272,7 @@ func main() {
         var user User
         c.BodyParser(&user)
         
-        if err := validator.ValidateStructWithContext(user, c); err != nil {
+        if err := validator.ValidateStructWithContext(c, user); err != nil {
             return handleValidationError(c, err)
         }
         return c.JSON(user)
@@ -384,7 +446,7 @@ Validasi struct dengan bahasa spesifik. Returns `*ValidationError` jika validasi
 - `s`: Struct to validate
 - `lang`: Language code (e.g., "en", "id", "zh")
 
-#### `ValidateStructWithContext(s interface{}, c *fiber.Ctx) error`
+#### `ValidateStructWithContext(c *fiber.Ctx, s interface{}) error`
 Validasi struct dengan bahasa dari Fiber context. Returns `*ValidationError` jika validasi gagal.
 
 Bahasa diambil dari (berurutan):
@@ -393,8 +455,8 @@ Bahasa diambil dari (berurutan):
 3. Default language
 
 **Parameters:**
-- `s`: Struct to validate
 - `c`: Fiber context containing language information
+- `s`: Struct to validate
 
 ### Types
 
