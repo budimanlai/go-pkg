@@ -13,6 +13,12 @@ type TestUser struct {
 	Age   int    `validate:"gte=0,lte=130"`
 }
 
+type TestUserWithJSON struct {
+	Name  string `json:"name" validate:"required"`
+	Email string `json:"email" validate:"required,email"`
+	Age   int    `json:"age" validate:"gte=18,lte=130"`
+}
+
 // Setup i18n for tests
 func setupI18n() *i18n.I18nManager {
 	i18nConfig := i18n.I18nConfig{
@@ -248,4 +254,58 @@ func TestValidationError_Methods(t *testing.T) {
 	if all[0] != "Error 1" || all[1] != "Error 2" {
 		t.Errorf("All messages incorrect: %v", all)
 	}
+}
+
+func TestValidateStruct_WithJSONTag(t *testing.T) {
+	setupI18n()
+
+	user := &TestUserWithJSON{
+		Name:  "",
+		Email: "invalid-email",
+		Age:   15,
+	}
+
+	err := ValidateStructWithLang(user, "en")
+	if err == nil {
+		t.Error("Expected error, got nil")
+	}
+
+	valErr, ok := err.(*ValidationError)
+	if !ok {
+		t.Errorf("Expected ValidationError, got %T", err)
+	}
+
+	// Check field errors use json tag names
+	fieldErrors := valErr.GetFieldErrors()
+
+	// Check that field names match json tags (lowercase)
+	if _, exists := fieldErrors["name"]; !exists {
+		t.Error("Expected field 'name' (from json tag), not found in errors")
+	}
+
+	if _, exists := fieldErrors["email"]; !exists {
+		t.Error("Expected field 'email' (from json tag), not found in errors")
+	}
+
+	if _, exists := fieldErrors["age"]; !exists {
+		t.Error("Expected field 'age' (from json tag), not found in errors")
+	}
+
+	// Check that messages use json tag names
+	if !contains(valErr.All(), "name is required") {
+		t.Errorf("Expected message with 'name' (lowercase from json tag), got: %v", valErr.All())
+	}
+
+	if !contains(valErr.All(), "email must be a valid email address") {
+		t.Errorf("Expected message with 'email' (lowercase from json tag), got: %v", valErr.All())
+	}
+}
+
+func contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }

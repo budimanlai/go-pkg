@@ -47,13 +47,39 @@ validator.SetI18nManager(i18nManager)
 ```
 
 ### 2. Definisikan Struct dengan Tag Validate
+
+**PENTING:** Gunakan tag `json` untuk konsistensi field name antara request/response dan error messages.
+
 ```go
 type User struct {
-    Name     string `validate:"required"`
-    Email    string `validate:"required,email"`
-    Password string `validate:"required,min=8"`
-    Age      int    `validate:"gte=18,lte=130"`
-    Username string `validate:"required,alphanum"`
+    Name     string `json:"name" validate:"required"`
+    Email    string `json:"email" validate:"required,email"`
+    Password string `json:"password" validate:"required,min=8"`
+    Age      int    `json:"age" validate:"gte=18,lte=130"`
+    Username string `json:"username" validate:"required,alphanum"`
+}
+```
+
+**Keuntungan menggunakan json tag:**
+- Field name di error message sama dengan field name di JSON request/response
+- Consistency untuk frontend developer
+- Lebih mudah mapping error ke form field di UI
+
+**Contoh tanpa json tag:**
+```json
+{
+  "errors": {
+    "Email": ["Email is required"]  // Title case
+  }
+}
+```
+
+**Contoh dengan json tag:**
+```json
+{
+  "errors": {
+    "email": ["email is required"]  // Lowercase, sama dengan request
+  }
 }
 ```
 
@@ -82,6 +108,11 @@ if err != nil {
 #### b. ValidateStructWithLang() - Menggunakan Bahasa Spesifik
 
 ```go
+type User struct {
+    Email    string `json:"email" validate:"required,email"`
+    Password string `json:"password" validate:"required,min=8"`
+}
+
 user := &User{
     Email:    "invalid-email",
     Password: "123",
@@ -92,7 +123,15 @@ err := validator.ValidateStructWithLang(user, "id")
 if err != nil {
     if valErr, ok := err.(*validator.ValidationError); ok {
         fmt.Println(valErr.First())
-        // Output: Email harus berupa alamat email yang valid
+        // Output: email harus berupa alamat email yang valid
+        
+        // Get field errors
+        for field, errs := range valErr.GetFieldErrors() {
+            fmt.Printf("%s: %v\n", field, errs)
+        }
+        // Output:
+        // email: [email harus berupa alamat email yang valid]
+        // password: [password minimal 8 karakter]
     }
 }
 
@@ -101,7 +140,7 @@ err = validator.ValidateStructWithLang(user, "en")
 if err != nil {
     if valErr, ok := err.(*validator.ValidationError); ok {
         fmt.Println(valErr.First())
-        // Output: Email must be a valid email address
+        // Output: email must be a valid email address
     }
 }
 ```
@@ -219,20 +258,22 @@ Response JSON:
 {
     "meta": {
         "success": false,
-        "message": "Email is required",
+        "message": "email is required",
         "errors": {
-            "Email": [
-                "Email is required",
-                "Email must be a valid email address"
+            "email": [
+                "email is required",
+                "email must be a valid email address"
             ],
-            "Password": [
-                "Password must be at least 8 characters"
+            "password": [
+                "password must be at least 8 characters"
             ]
         }
     },
     "data": null
 }
 ```
+
+**Catatan:** Field names menggunakan nama dari json tag (lowercase), bukan nama struct field (Title Case).
 
 ## Perbandingan 3 Fungsi Validasi
 

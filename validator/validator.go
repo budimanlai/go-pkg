@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 
 	"github.com/budimanlai/go-pkg/i18n"
@@ -177,6 +178,59 @@ func getLanguageFromContext(c *fiber.Ctx) string {
 	return "en" // fallback to English
 }
 
+// getFieldName retrieves the field name from json tag if available, otherwise returns the struct field name.
+// This ensures consistency between request/response JSON field names and validation error messages.
+//
+// Parameters:
+//   - s: The struct being validated
+//   - fieldName: The struct field name from validator
+//
+// Returns:
+//   - string: JSON tag name if exists, otherwise original field name in title case
+//
+// Example:
+//
+//	type User struct {
+//	    Email string `json:"email" validate:"required"`
+//	}
+//	// getFieldName will return "email" instead of "Email"
+func getFieldName(s interface{}, fieldName string) string {
+	// Get the type of the struct
+	val := reflect.ValueOf(s)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	// If not a struct, return title case of field name
+	if val.Kind() != reflect.Struct {
+		caser := cases.Title(language.Und)
+		return caser.String(fieldName)
+	}
+
+	// Try to find the field in the struct
+	typ := val.Type()
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		if field.Name == fieldName {
+			// Check if json tag exists
+			jsonTag := field.Tag.Get("json")
+			if jsonTag != "" {
+				// Handle json tag with options (e.g., "email,omitempty")
+				parts := strings.Split(jsonTag, ",")
+				if parts[0] != "" && parts[0] != "-" {
+					return parts[0]
+				}
+			}
+			// If no json tag or json:"-", return title case of field name
+			break
+		}
+	}
+
+	// Fallback to title case of original field name
+	caser := cases.Title(language.Und)
+	return caser.String(fieldName)
+}
+
 // ValidateStruct validates a struct using validation tags with the default language.
 // If i18nManager is set, it uses the default language from i18nManager.
 // Otherwise, it uses "en" (English) as the default language.
@@ -253,11 +307,12 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 	var validateErrs validator.ValidationErrors
 	if errors.As(err, &validateErrs) {
 		for _, e := range validateErrs {
-			message := getUserFriendlyMessage(e.Field(), e.Tag(), e.Param(), lang)
+			// Get field name from json tag if available
+			fieldName := getFieldName(s, e.Field())
+			message := getUserFriendlyMessage(fieldName, e.Tag(), e.Param(), lang)
 			messages = append(messages, message)
 
-			// Add to field errors map
-			fieldName := e.Field()
+			// Add to field errors map using json tag name
 			fieldErrors[fieldName] = append(fieldErrors[fieldName], message)
 		}
 	} else {
@@ -313,13 +368,13 @@ func ValidateStructWithContext(c *fiber.Ctx, s interface{}) error {
 // It uses i18n for translations if i18nManager is set, otherwise falls back to DefaultMessages.
 //
 // The function:
-//   - Converts field names to title case for readability
+//   - Uses field name from json tag for consistency with request/response
 //   - Uses i18n with "validator." prefix for message keys (e.g., "validator.required")
 //   - Falls back to DefaultMessages if i18n is not available or translation not found
 //   - Supports template data with FieldName, Param, and Tag placeholders
 //
 // Parameters:
-//   - field: Name of the field that failed validation
+//   - fieldName: Name of the field (from json tag or struct field name)
 //   - tag: Validation tag that failed (e.g., "required", "email", "min")
 //   - param: Parameter value for the validation tag (e.g., "8" for min=8)
 //   - lang: Language code for the error message
@@ -330,16 +385,12 @@ func ValidateStructWithContext(c *fiber.Ctx, s interface{}) error {
 // Example:
 //
 //	msg := getUserFriendlyMessage("email", "required", "", "en")
-//	// Returns: "Email is required"
+//	// Returns: "email is required"
 //
 //	msg := getUserFriendlyMessage("password", "min", "8", "id")
-//	// Returns: "Password minimal 8 karakter"
-func getUserFriendlyMessage(field, tag, param, lang string) string {
-	// Gunakan unicode-aware title caser
-	caser := cases.Title(language.Und)
-	fieldName := caser.String(field)
-
-	// Prepare template data
+//	// Returns: "password minimal 8 karakter"
+func getUserFriendlyMessage(fieldName, tag, param, lang string) string {
+	// Prepare template data (fieldName already processed from json tag or title case)
 	templateData := map[string]string{
 		"FieldName": fieldName,
 		"Param":     param,
