@@ -140,6 +140,58 @@ func SuccessI18n(c *fiber.Ctx, messageID string, data interface{}) error {
 	return Success(c, message, data)
 }
 
+// ValidationErrorI18n returns a 400 Bad Request response with validation error details.
+// It extracts field-specific errors from the ValidationError and formats them in a JSON response.
+// If the error is not a ValidationError, it falls back to a generic bad request response.
+//
+// Response format:
+//
+//	{
+//	  "meta": {
+//	    "success": false,
+//	    "message": "First validation error message",
+//	    "errors": {
+//	      "Email": ["Email is required", "Email must be valid"],
+//	      "Password": ["Password must be at least 8 characters"]
+//	    }
+//	  },
+//	  "data": null
+//	}
+//
+// Parameters:
+//   - c: *fiber.Ctx - The Fiber context
+//   - err: error - The validation error (should be *validator.ValidationError)
+//
+// Returns:
+//   - error: Fiber error for response handling
+//
+// Example:
+//
+//	if err := validator.ValidateStructWithContext(user, c); err != nil {
+//	    return response.ValidationErrorI18n(c, err)
+//	}
+func ValidationErrorI18n(c *fiber.Ctx, err error) error {
+	// Type assertion to get ValidationError
+	type validationError interface {
+		First() string
+		GetFieldErrors() map[string][]string
+	}
+
+	if verr, ok := err.(validationError); ok {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"meta": fiber.Map{
+				"success": false,
+				"message": verr.First(),
+				"errors":  verr.GetFieldErrors(),
+			},
+			"data": nil,
+		})
+	}
+
+	// Fallback if not a validation error
+	return BadRequest(c, err.Error())
+}
+
 // NotFound returns a 404 Not Found JSON response with the specified message.
 //
 // Response format:

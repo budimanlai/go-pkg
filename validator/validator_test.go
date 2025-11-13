@@ -79,6 +79,42 @@ func TestValidateStructWithLang_Invalid_ID(t *testing.T) {
 			t.Errorf("Expected error %d '%s', got '%s'", i, msg, all[i])
 		}
 	}
+
+	// Test field errors
+	fieldErrors := valErr.GetFieldErrors()
+	if len(fieldErrors) != 3 {
+		t.Errorf("Expected 3 field errors, got %d", len(fieldErrors))
+	}
+
+	// Check Name field errors
+	if nameErrs, ok := fieldErrors["Name"]; ok {
+		if len(nameErrs) != 1 {
+			t.Errorf("Expected 1 error for Name, got %d", len(nameErrs))
+		}
+		if nameErrs[0] != "Name wajib diisi" {
+			t.Errorf("Expected Name error 'Name wajib diisi', got '%s'", nameErrs[0])
+		}
+	} else {
+		t.Error("Expected Name in field errors")
+	}
+
+	// Check Email field errors
+	if emailErrs, ok := fieldErrors["Email"]; ok {
+		if len(emailErrs) != 1 {
+			t.Errorf("Expected 1 error for Email, got %d", len(emailErrs))
+		}
+	} else {
+		t.Error("Expected Email in field errors")
+	}
+
+	// Check Age field errors
+	if ageErrs, ok := fieldErrors["Age"]; ok {
+		if len(ageErrs) != 1 {
+			t.Errorf("Expected 1 error for Age, got %d", len(ageErrs))
+		}
+	} else {
+		t.Error("Expected Age in field errors")
+	}
 }
 
 func TestValidateStructWithLang_Invalid_EN(t *testing.T) {

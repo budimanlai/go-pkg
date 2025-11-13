@@ -1,0 +1,27 @@
+Saat ini validator menyimpan pesan error dalam bentuk array: Messages[] string
+ini mudah kalau hanya ingin menampilkan pesan message nya saja.
+
+Saya ingin menambah fungsi di response untuk mengembalikan response json bukan hanya pesan error nya saja, tapi field apa yang error agar developer bisa menggunakan field ini untuk ditampilkan di UI.
+
+rencana nya bentuk response nya adalah seperti berikut ini:
+{
+    "meta": {
+        "success": false,
+        "message": "Validation error message",
+        "errors": [
+            "email": [
+                "Email is required",
+                "Email must be a valid email address"
+            ],
+            "phone": [
+                "handPhone must be numeric"
+            ]
+        ]
+    },
+    "data": null
+}
+
+cara penggunaan nya nanti seperti ini:
+if err := validator.ValidateStructWithContext(user, c); err != nil {
+    return response.ValidateError18n(c, err)
+}
