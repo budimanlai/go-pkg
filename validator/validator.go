@@ -58,15 +58,17 @@ func SetI18nManager(manager *i18n.I18nManager) {
 
 // ValidationError is a custom error type for validation failures.
 // It collects multiple validation error messages and provides convenient methods
-// to access them individually or as a group.
+// to access them individually or as a group, including per-field error details.
 //
 // Fields:
-//   - Messages: Slice of validation error messages
+//   - Messages: Slice of all validation error messages (for backward compatibility)
+//   - Errors: Map of field names to their error messages (for detailed error reporting)
 //
 // Methods:
 //   - Error(): Returns all messages joined by semicolon (implements error interface)
 //   - First(): Returns the first error message
 //   - All(): Returns all error messages as a slice
+//   - GetFieldErrors(): Returns map of field names to their error messages
 //
 // Example:
 //
@@ -74,10 +76,12 @@ func SetI18nManager(manager *i18n.I18nManager) {
 //	    if verr, ok := err.(*ValidationError); ok {
 //	        fmt.Println(verr.First())  // Get first error
 //	        fmt.Println(verr.All())    // Get all errors
+//	        fmt.Println(verr.GetFieldErrors())  // Get errors per field
 //	    }
 //	}
 type ValidationError struct {
-	Messages []string
+	Messages []string            // All error messages (backward compatibility)
+	Errors   map[string][]string // Field name -> error messages mapping
 }
 
 // Error implements the error interface for ValidationError.
@@ -129,6 +133,27 @@ func (ve *ValidationError) First() string {
 //	// Password is too short
 func (ve *ValidationError) All() []string {
 	return ve.Messages
+}
+
+// GetFieldErrors returns a map of field names to their error messages.
+// This is useful for displaying field-specific errors in UI forms.
+//
+// Returns:
+//   - map[string][]string: Map where keys are field names and values are slices of error messages for that field
+//
+// Example:
+//
+//	verr := &ValidationError{
+//	    Errors: map[string][]string{
+//	        "Email": {"Email is required", "Email must be valid"},
+//	        "Password": {"Password is too short"},
+//	    },
+//	}
+//	for field, errs := range verr.GetFieldErrors() {
+//	    fmt.Printf("%s: %v\n", field, errs)
+//	}
+func (ve *ValidationError) GetFieldErrors() map[string][]string {
+	return ve.Errors
 }
 
 // getLanguageFromContext retrieves the language code from the Fiber context.
@@ -223,17 +248,27 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 	}
 
 	var messages []string
+	fieldErrors := make(map[string][]string)
+
 	var validateErrs validator.ValidationErrors
 	if errors.As(err, &validateErrs) {
 		for _, e := range validateErrs {
 			message := getUserFriendlyMessage(e.Field(), e.Tag(), e.Param(), lang)
 			messages = append(messages, message)
+
+			// Add to field errors map
+			fieldName := e.Field()
+			fieldErrors[fieldName] = append(fieldErrors[fieldName], message)
 		}
 	} else {
 		// Jika bukan validation error, kembalikan error asli
 		messages = append(messages, err.Error())
 	}
-	return &ValidationError{Messages: messages}
+
+	return &ValidationError{
+		Messages: messages,
+		Errors:   fieldErrors,
+	}
 }
 
 // ValidateStructWithContext validates a struct using validation tags with language from Fiber context.
