@@ -1,5 +1,15 @@
 {
     "welcome": "欢迎",
     "hello_name": "你好，{{.Name}}!",
-    "sukses": "操作成功"
+    "sukses": "操作成功",
+    "validator.required": "{{.FieldName}}是必填项",
+    "validator.email": "{{.FieldName}}必须是有效的电子邮件地址",
+    "validator.min": "{{.FieldName}}必须至少{{.Param}}个字符",
+    "validator.max": "{{.FieldName}}最多{{.Param}}个字符",
+    "validator.gte": "{{.FieldName}}必须大于或等于{{.Param}}",
+    "validator.lte": "{{.FieldName}}必须小于或等于{{.Param}}",
+    "validator.len": "{{.FieldName}}必须正好是{{.Param}}个字符",
+    "validator.numeric": "{{.FieldName}}必须是数字",
+    "validator.alphanum": "{{.FieldName}}只能包含字母和数字",
+    "validator.default": "{{.FieldName}}无效 ({{.Tag}})"
 }

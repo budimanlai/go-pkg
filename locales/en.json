@@ -1,5 +1,15 @@
 {
     "welcome": "Welcome to our application!",
     "hello_name": "Hello, {{.Name}}!",
-    "sukses": "Operation successful"
+    "sukses": "Operation successful",
+    "validator.required": "{{.FieldName}} is required",
+    "validator.email": "{{.FieldName}} must be a valid email address",
+    "validator.min": "{{.FieldName}} must be at least {{.Param}} characters",
+    "validator.max": "{{.FieldName}} must be at most {{.Param}} characters",
+    "validator.gte": "{{.FieldName}} must be greater than or equal to {{.Param}}",
+    "validator.lte": "{{.FieldName}} must be less than or equal to {{.Param}}",
+    "validator.len": "{{.FieldName}} must be exactly {{.Param}} characters",
+    "validator.numeric": "{{.FieldName}} must be numeric",
+    "validator.alphanum": "{{.FieldName}} must contain only letters and numbers",
+    "validator.default": "{{.FieldName}} is invalid ({{.Tag}})"
 }

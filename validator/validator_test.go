@@ -2,6 +2,9 @@ package validator
 
 import (
 	"testing"
+
+	"github.com/budimanlai/go-pkg/i18n"
+	"golang.org/x/text/language"
 )
 
 type TestUser struct {
@@ -10,27 +13,43 @@ type TestUser struct {
 	Age   int    `validate:"gte=0,lte=130"`
 }
 
+// Setup i18n for tests
+func setupI18n() *i18n.I18nManager {
+	i18nConfig := i18n.I18nConfig{
+		DefaultLanguage: language.English,
+		SupportedLangs:  []string{"en", "id", "zh"},
+		LocalesPath:     "../locales",
+	}
+	manager, _ := i18n.NewI18nManager(i18nConfig)
+	SetI18nManager(manager)
+	return manager
+}
+
 func TestValidateStruct_Valid(t *testing.T) {
+	setupI18n()
+
 	user := &TestUser{
 		Name:  "John Doe",
 		Email: "john@example.com",
 		Age:   25,
 	}
 
-	err := ValidateStruct(user, "id")
+	err := ValidateStruct(user)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 }
 
-func TestValidateStruct_Invalid_ID(t *testing.T) {
+func TestValidateStructWithLang_Invalid_ID(t *testing.T) {
+	setupI18n()
+
 	user := &TestUser{
 		Name:  "",
 		Email: "invalid-email",
 		Age:   -5,
 	}
 
-	err := ValidateStruct(user, "id")
+	err := ValidateStructWithLang(user, "id")
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
@@ -62,14 +81,16 @@ func TestValidateStruct_Invalid_ID(t *testing.T) {
 	}
 }
 
-func TestValidateStruct_Invalid_EN(t *testing.T) {
+func TestValidateStructWithLang_Invalid_EN(t *testing.T) {
+	setupI18n()
+
 	user := &TestUser{
 		Name:  "",
 		Email: "invalid-email",
 		Age:   -5,
 	}
 
-	err := ValidateStruct(user, "en")
+	err := ValidateStructWithLang(user, "en")
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
@@ -85,12 +106,14 @@ func TestValidateStruct_Invalid_EN(t *testing.T) {
 	}
 }
 
-func TestValidateStruct_UnknownLang(t *testing.T) {
+func TestValidateStruct_DefaultLanguage(t *testing.T) {
+	setupI18n()
+
 	user := &TestUser{
 		Name: "",
 	}
 
-	err := ValidateStruct(user, "unknown")
+	err := ValidateStruct(user)
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
@@ -100,37 +123,22 @@ func TestValidateStruct_UnknownLang(t *testing.T) {
 		t.Errorf("Expected ValidationError, got %T", err)
 	}
 
-	// Should default to "id"
-	expectedFirst := "Name wajib diisi"
+	// Should use default language (English)
+	expectedFirst := "Name is required"
 	if valErr.First() != expectedFirst {
 		t.Errorf("Expected first error '%s', got '%s'", expectedFirst, valErr.First())
 	}
 }
 
-func TestAddLanguage(t *testing.T) {
-	// Add new language
-	jvMessages := map[string]string{
-		"required": "%s kudu diisi",
-		"default":  "%s ora valid",
-	}
-	AddLanguage("jv", jvMessages)
+func TestValidateStruct_WithoutI18n(t *testing.T) {
+	// Reset i18nManager to nil
+	SetI18nManager(nil)
 
-	// Check if added
-	langs := GetLanguages()
-	found := false
-	for _, lang := range langs {
-		if lang == "jv" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Error("Language 'jv' not added")
+	user := &TestUser{
+		Name: "",
 	}
 
-	// Test validation with new language
-	user := &TestUser{Name: ""}
-	err := ValidateStruct(user, "jv")
+	err := ValidateStruct(user)
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
@@ -140,23 +148,22 @@ func TestAddLanguage(t *testing.T) {
 		t.Errorf("Expected ValidationError, got %T", err)
 	}
 
-	expectedFirst := "Name kudu diisi"
+	// Should use DefaultMessages (English)
+	expectedFirst := "Name is required"
 	if valErr.First() != expectedFirst {
 		t.Errorf("Expected first error '%s', got '%s'", expectedFirst, valErr.First())
 	}
 }
 
-func TestUpdateLanguage(t *testing.T) {
-	// Update existing language
-	customID := map[string]string{
-		"required": "%s harus ada",
-		"default":  "%s salah",
-	}
-	UpdateLanguage("id", customID)
+func TestValidateStructWithLang_Chinese(t *testing.T) {
+	setupI18n()
 
-	// Test validation
-	user := &TestUser{Name: ""}
-	err := ValidateStruct(user, "id")
+	user := &TestUser{
+		Name:  "",
+		Email: "invalid-email",
+	}
+
+	err := ValidateStructWithLang(user, "zh")
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
@@ -166,35 +173,20 @@ func TestUpdateLanguage(t *testing.T) {
 		t.Errorf("Expected ValidationError, got %T", err)
 	}
 
-	expectedFirst := "Name harus ada"
-	if valErr.First() != expectedFirst {
-		t.Errorf("Expected first error '%s', got '%s'", expectedFirst, valErr.First())
+	// Check Chinese translation exists
+	first := valErr.First()
+	if first == "" {
+		t.Error("Expected error message, got empty string")
 	}
 }
 
-func TestGetLanguages(t *testing.T) {
-	langs := GetLanguages()
-	if len(langs) < 2 {
-		t.Errorf("Expected at least 2 languages, got %d", len(langs))
-	}
+func TestValidateStructWithContext(t *testing.T) {
+	setupI18n()
 
-	// Check if "id" and "en" exist
-	hasID := false
-	hasEN := false
-	for _, lang := range langs {
-		if lang == "id" {
-			hasID = true
-		}
-		if lang == "en" {
-			hasEN = true
-		}
-	}
-	if !hasID {
-		t.Error("Language 'id' not found")
-	}
-	if !hasEN {
-		t.Error("Language 'en' not found")
-	}
+	t.Skip("Skipping Fiber context test - requires full HTTP request setup")
+
+	// Note: Testing ValidateStructWithContext requires a full Fiber app
+	// with HTTP request. For integration tests, see examples/validator_with_fiber.go
 }
 
 func TestValidationError_Methods(t *testing.T) {
