@@ -231,17 +231,17 @@ app.Post("/users", func(c *fiber.Ctx) error {
 {
     "meta": {
         "success": false,
-        "message": "Email is required",
+        "message": "email is required",
         "errors": {
-            "Email": [
-                "Email is required",
-                "Email must be a valid email address"
+            "email": [
+                "email is required",
+                "email must be a valid email address"
             ],
-            "Password": [
-                "Password must be at least 8 characters"
+            "password": [
+                "password must be at least 8 characters"
             ],
-            "Age": [
-                "Age must be greater than or equal to 18"
+            "age": [
+                "age must be greater than or equal to 18"
             ]
         }
     },
@@ -252,6 +252,7 @@ app.Post("/users", func(c *fiber.Ctx) error {
 **Keunggulan:**
 - Pesan error otomatis menggunakan bahasa dari context (i18n)
 - Field errors terstruktur per field untuk UI form validation
+- Field names konsisten dengan JSON request (menggunakan json tag)
 - `meta.message` berisi first error sebagai summary
 - `meta.errors` berisi detail semua error per field
 - Return status code 400 (Bad Request)
