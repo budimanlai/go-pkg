@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestNewMySQLDb(t *testing.T) {
+func TestNewDbManager(t *testing.T) {
 	config := DbConfig{
 		Driver:   MySQL,
 		Host:     "localhost",
@@ -15,7 +15,7 @@ func TestNewMySQLDb(t *testing.T) {
 		Charset:  "utf8mb4",
 	}
 
-	dbManager := NewMySQLDb(config)
+	dbManager := NewDbManager(config)
 
 	if dbManager.Config.Driver != MySQL {
 		t.Errorf("Expected driver %s, got %s", MySQL, dbManager.Config.Driver)
@@ -38,7 +38,7 @@ func TestGetDb_BeforeOpen(t *testing.T) {
 		Name:     "testdb",
 	}
 
-	dbManager := NewMySQLDb(config)
+	dbManager := NewDbManager(config)
 	db := dbManager.GetDb()
 
 	if db != nil {
@@ -64,12 +64,12 @@ func TestClose_WithoutOpen(t *testing.T) {
 		Name:     "testdb",
 	}
 
-	dbManager := NewMySQLDb(config)
+	dbManager := NewDbManager(config)
 
 	// Should not panic
 	dbManager.Close()
 }
 
 func TestDefaultValues(t *testing.T) {
-	t.Skip("Default values are set in OpenWithConfig, not in NewMySQLDb")
+	t.Skip("Default values are set in OpenWithConfig, not in NewDbManager")
 }
