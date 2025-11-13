@@ -2,5 +2,15 @@
     "welcome": "Selamat datang di aplikasi kami!",
     "hello_name": "Halo, {{.Name}}!",
     "selamat_pagi": "Selamat pagi",
-    "sukses": "Operasi berhasil"
+    "sukses": "Operasi berhasil",
+    "validator.required": "{{.FieldName}} wajib diisi",
+    "validator.email": "{{.FieldName}} harus berupa alamat email yang valid",
+    "validator.min": "{{.FieldName}} minimal {{.Param}} karakter",
+    "validator.max": "{{.FieldName}} maksimal {{.Param}} karakter",
+    "validator.gte": "{{.FieldName}} harus lebih besar atau sama dengan {{.Param}}",
+    "validator.lte": "{{.FieldName}} harus lebih kecil atau sama dengan {{.Param}}",
+    "validator.len": "{{.FieldName}} harus memiliki panjang {{.Param}}",
+    "validator.numeric": "{{.FieldName}} harus berupa angka",
+    "validator.alphanum": "{{.FieldName}} hanya boleh berisi huruf dan angka",
+    "validator.default": "{{.FieldName}} tidak valid ({{.Tag}})"
 }

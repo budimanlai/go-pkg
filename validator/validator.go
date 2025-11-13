@@ -2,10 +2,11 @@ package validator
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/budimanlai/go-pkg/i18n"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -15,45 +16,44 @@ var (
 	// It is initialized automatically and can be used throughout the application.
 	Validator *validator.Validate
 
-	// Messages contains validation error messages organized by language and validation tag.
-	// Structure: map[language]map[tag]messageTemplate
-	//
-	// Supported languages: "id" (Indonesian), "en" (English)
-	// Message templates use %s placeholders for field name and parameter values.
-	//
-	// Example:
-	//   Messages["id"]["required"] = "%s wajib diisi"
-	//   Messages["en"]["required"] = "%s is required"
-	Messages = map[string]map[string]string{
-		"id": {
-			"required": "%s wajib diisi",
-			"email":    "%s harus berupa alamat email yang valid",
-			"min":      "%s minimal %s karakter",
-			"max":      "%s maksimal %s karakter",
-			"gte":      "%s harus lebih besar atau sama dengan %s",
-			"lte":      "%s harus lebih kecil atau sama dengan %s",
-			"len":      "%s harus memiliki panjang %s",
-			"numeric":  "%s harus berupa angka",
-			"alphanum": "%s hanya boleh berisi huruf dan angka",
-			"default":  "%s tidak valid (%s)",
-		},
-		"en": {
-			"required": "%s is required",
-			"email":    "%s must be a valid email address",
-			"min":      "%s must be at least %s characters",
-			"max":      "%s must be at most %s characters",
-			"gte":      "%s must be greater than or equal to %s",
-			"lte":      "%s must be less than or equal to %s",
-			"len":      "%s must be exactly %s characters",
-			"numeric":  "%s must be numeric",
-			"alphanum": "%s must contain only letters and numbers",
-			"default":  "%s is invalid (%s)",
-		},
+	// i18nManager holds the I18nManager instance for translation support.
+	// If set, validator will use i18n for error messages. If nil, it falls back to default English messages.
+	i18nManager *i18n.I18nManager
+
+	// DefaultMessages contains fallback validation error messages in English.
+	// These are used when i18nManager is not set or translation is not found.
+	// Message templates use placeholders: {{.FieldName}}, {{.Param}}, {{.Tag}}
+	DefaultMessages = map[string]string{
+		"required": "{{.FieldName}} is required",
+		"email":    "{{.FieldName}} must be a valid email address",
+		"min":      "{{.FieldName}} must be at least {{.Param}} characters",
+		"max":      "{{.FieldName}} must be at most {{.Param}} characters",
+		"gte":      "{{.FieldName}} must be greater than or equal to {{.Param}}",
+		"lte":      "{{.FieldName}} must be less than or equal to {{.Param}}",
+		"len":      "{{.FieldName}} must be exactly {{.Param}} characters",
+		"numeric":  "{{.FieldName}} must be numeric",
+		"alphanum": "{{.FieldName}} must contain only letters and numbers",
+		"default":  "{{.FieldName}} is invalid ({{.Tag}})",
 	}
 )
 
 func init() {
 	Validator = validator.New()
+}
+
+// SetI18nManager sets the global I18nManager instance for validator translations.
+// Once set, all validation error messages will use i18n translations with the "validator." prefix.
+// If not set, validator will use DefaultMessages (English).
+//
+// Parameters:
+//   - manager: *i18n.I18nManager - The initialized i18n manager instance
+//
+// Example:
+//
+//	i18nMgr, _ := i18n.NewI18nManager(config)
+//	validator.SetI18nManager(i18nMgr)
+func SetI18nManager(manager *i18n.I18nManager) {
+	i18nManager = manager
 }
 
 // ValidationError is a custom error type for validation failures.
@@ -131,16 +131,72 @@ func (ve *ValidationError) All() []string {
 	return ve.Messages
 }
 
-// ValidateStruct validates a struct using validation tags and returns localized error messages.
+// getLanguageFromContext retrieves the language code from the Fiber context.
+// It attempts to get the language set by I18nMiddleware from context locals.
+// If not found, it falls back to the default language from i18nManager, or "en" if i18nManager is not set.
+//
+// Parameters:
+//   - c: *fiber.Ctx - The Fiber context
+//
+// Returns:
+//   - string: Language code (e.g., "en", "id", "zh")
+func getLanguageFromContext(c *fiber.Ctx) string {
+	if lang, ok := c.Locals("language").(string); ok {
+		return lang
+	}
+
+	if i18nManager != nil {
+		return i18nManager.DefaultLanguage
+	}
+
+	return "en" // fallback to English
+}
+
+// ValidateStruct validates a struct using validation tags with the default language.
+// If i18nManager is set, it uses the default language from i18nManager.
+// Otherwise, it uses "en" (English) as the default language.
+//
+// Parameters:
+//   - s: The struct to validate (must have validation tags)
+//
+// Returns:
+//   - error: nil if validation succeeds, *ValidationError if validation fails
+//
+// Example:
+//
+//	type User struct {
+//	    Email    string `validate:"required,email"`
+//	    Password string `validate:"required,min=8"`
+//	}
+//
+//	user := User{Email: "invalid", Password: "123"}
+//	if err := ValidateStruct(user); err != nil {
+//	    if verr, ok := err.(*ValidationError); ok {
+//	        fmt.Println(verr.First())
+//	        // Output: Email must be a valid email address
+//	    }
+//	}
+func ValidateStruct(s interface{}) error {
+	defaultLang := "en"
+	if i18nManager != nil {
+		defaultLang = i18nManager.DefaultLanguage
+	}
+	return ValidateStructWithLang(s, defaultLang)
+}
+
+// ValidateStructWithLang validates a struct using validation tags with a specified language.
 // It uses the global Validator instance and translates errors based on the specified language.
 //
 // The function automatically converts field names to title case for better readability.
+// If i18nManager is set, it will use i18n translations from locale files with "validator." prefix.
+// Otherwise, it falls back to DefaultMessages (English).
+//
 // If validation succeeds, it returns nil. If validation fails, it returns a ValidationError
 // containing all validation error messages in the specified language.
 //
 // Parameters:
 //   - s: The struct to validate (must have validation tags)
-//   - lang: Language code for error messages ("en" or "id")
+//   - lang: Language code for error messages (e.g., "en", "id", "zh")
 //
 // Returns:
 //   - error: nil if validation succeeds, *ValidationError if validation fails
@@ -154,13 +210,13 @@ func (ve *ValidationError) All() []string {
 //	}
 //
 //	user := User{Email: "invalid", Password: "123", Age: 15}
-//	if err := ValidateStruct(user, "en"); err != nil {
+//	if err := ValidateStructWithLang(user, "id"); err != nil {
 //	    if verr, ok := err.(*ValidationError); ok {
 //	        fmt.Println(verr.First())
-//	        // Output: Email must be a valid email address
+//	        // Output: Email harus berupa alamat email yang valid
 //	    }
 //	}
-func ValidateStruct(s interface{}, lang string) error {
+func ValidateStructWithLang(s interface{}, lang string) error {
 	err := Validator.Struct(s)
 	if err == nil {
 		return nil
@@ -180,14 +236,52 @@ func ValidateStruct(s interface{}, lang string) error {
 	return &ValidationError{Messages: messages}
 }
 
+// ValidateStructWithContext validates a struct using validation tags with language from Fiber context.
+// It extracts the language from the Fiber context (set by I18nMiddleware) and uses it for error messages.
+// If language is not found in context, it falls back to the default language.
+//
+// The function automatically converts field names to title case for better readability.
+// If i18nManager is set, it will use i18n translations from locale files with "validator." prefix.
+// Otherwise, it falls back to DefaultMessages (English).
+//
+// Parameters:
+//   - s: The struct to validate (must have validation tags)
+//   - c: *fiber.Ctx - The Fiber context containing language information
+//
+// Returns:
+//   - error: nil if validation succeeds, *ValidationError if validation fails
+//
+// Example:
+//
+//	app.Post("/users", func(c *fiber.Ctx) error {
+//	    var user User
+//	    if err := c.BodyParser(&user); err != nil {
+//	        return err
+//	    }
+//
+//	    if err := ValidateStructWithContext(user, c); err != nil {
+//	        if verr, ok := err.(*ValidationError); ok {
+//	            return c.Status(400).JSON(fiber.Map{
+//	                "error": verr.First(),
+//	            })
+//	        }
+//	    }
+//
+//	    return c.JSON(user)
+//	})
+func ValidateStructWithContext(s interface{}, c *fiber.Ctx) error {
+	lang := getLanguageFromContext(c)
+	return ValidateStructWithLang(s, lang)
+}
+
 // getUserFriendlyMessage generates a user-friendly error message based on validation failure details.
-// It formats the message using the appropriate language template with field name and parameter values.
+// It uses i18n for translations if i18nManager is set, otherwise falls back to DefaultMessages.
 //
 // The function:
 //   - Converts field names to title case for readability
-//   - Selects the appropriate message template based on language and validation tag
-//   - Falls back to Indonesian ("id") if the specified language is not found
-//   - Uses "default" template if the validation tag is not found
+//   - Uses i18n with "validator." prefix for message keys (e.g., "validator.required")
+//   - Falls back to DefaultMessages if i18n is not available or translation not found
+//   - Supports template data with FieldName, Param, and Tag placeholders
 //
 // Parameters:
 //   - field: Name of the field that failed validation
@@ -203,98 +297,48 @@ func ValidateStruct(s interface{}, lang string) error {
 //	msg := getUserFriendlyMessage("email", "required", "", "en")
 //	// Returns: "Email is required"
 //
-//	msg := getUserFriendlyMessage("password", "min", "8", "en")
-//	// Returns: "Password must be at least 8 characters"
+//	msg := getUserFriendlyMessage("password", "min", "8", "id")
+//	// Returns: "Password minimal 8 karakter"
 func getUserFriendlyMessage(field, tag, param, lang string) string {
 	// Gunakan unicode-aware title caser
 	caser := cases.Title(language.Und)
 	fieldName := caser.String(field)
 
-	// Ambil pesan berdasarkan bahasa, default ke "id" jika tidak ada
-	langMessages, exists := Messages[lang]
+	// Prepare template data
+	templateData := map[string]string{
+		"FieldName": fieldName,
+		"Param":     param,
+		"Tag":       tag,
+	}
+
+	// Try to get message from i18n if available
+	if i18nManager != nil {
+		messageKey := "validator." + tag
+		message := i18nManager.Translate(lang, messageKey, templateData)
+
+		// Check if translation was found (i18n returns the key if not found)
+		if !strings.Contains(message, "Missing translation") {
+			return message
+		}
+
+		// Try default key if specific tag not found
+		messageKey = "validator.default"
+		message = i18nManager.Translate(lang, messageKey, templateData)
+		if !strings.Contains(message, "Missing translation") {
+			return message
+		}
+	}
+
+	// Fallback to default English messages
+	template, exists := DefaultMessages[tag]
 	if !exists {
-		langMessages = Messages["id"]
+		template = DefaultMessages["default"]
 	}
 
-	template, exists := langMessages[tag]
-	if !exists {
-		template = langMessages["default"]
-	}
+	// Simple template replacement for default messages
+	message := strings.ReplaceAll(template, "{{.FieldName}}", fieldName)
+	message = strings.ReplaceAll(message, "{{.Param}}", param)
+	message = strings.ReplaceAll(message, "{{.Tag}}", tag)
 
-	if param == "" {
-		return fmt.Sprintf(template, fieldName)
-	}
-	return fmt.Sprintf(template, fieldName, param)
-}
-
-// AddLanguage adds a new language with custom validation messages to the Messages map.
-// If the language already exists, this function does nothing (messages are not overwritten).
-// To update an existing language, use UpdateLanguage instead.
-//
-// Parameters:
-//   - lang: Language code (e.g., "fr", "es", "zh")
-//   - messages: Map of validation tags to message templates
-//
-// Example:
-//
-//	AddLanguage("fr", map[string]string{
-//	    "required": "%s est requis",
-//	    "email":    "%s doit être une adresse email valide",
-//	    "min":      "%s doit comporter au moins %s caractères",
-//	    "default":  "%s n'est pas valide (%s)",
-//	})
-func AddLanguage(lang string, messages map[string]string) {
-	if _, exists := Messages[lang]; !exists {
-		Messages[lang] = messages
-	}
-}
-
-// UpdateLanguage updates or adds validation messages for a language.
-// If the language already exists, it completely replaces the existing messages.
-// If the language doesn't exist, it creates a new entry.
-//
-// Parameters:
-//   - lang: Language code (e.g., "en", "id", "zh")
-//   - messages: Map of validation tags to message templates
-//
-// Example:
-//
-//	// Update existing language
-//	UpdateLanguage("en", map[string]string{
-//	    "required": "%s is mandatory",
-//	    "email":    "%s must be valid email",
-//	    "default":  "%s is not valid (%s)",
-//	})
-//
-//	// Add new language
-//	UpdateLanguage("es", map[string]string{
-//	    "required": "%s es requerido",
-//	    "email":    "%s debe ser un correo electrónico válido",
-//	    "default":  "%s no es válido (%s)",
-//	})
-func UpdateLanguage(lang string, messages map[string]string) {
-	Messages[lang] = messages
-}
-
-// GetLanguages returns a list of all available language codes in the Messages map.
-// The order of languages in the returned slice is not guaranteed.
-//
-// Returns:
-//   - []string: Slice of language codes
-//
-// Example:
-//
-//	langs := GetLanguages()
-//	fmt.Println(langs)
-//	// Output (order may vary): [id en]
-//
-//	for _, lang := range GetLanguages() {
-//	    fmt.Printf("Language: %s\n", lang)
-//	}
-func GetLanguages() []string {
-	var langs []string
-	for lang := range Messages {
-		langs = append(langs, lang)
-	}
-	return langs
+	return message
 }
