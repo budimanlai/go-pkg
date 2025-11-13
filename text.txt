@@ -22,6 +22,6 @@ rencana nya bentuk response nya adalah seperti berikut ini:
 }
 
 cara penggunaan nya nanti seperti ini:
-if err := validator.ValidateStructWithContext(user, c); err != nil {
+if err := validator.ValidateStructWithContext(c, user); err != nil {
     return response.ValidateError18n(c, err)
 }
