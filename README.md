@@ -128,7 +128,6 @@ go-pkg/
 ├── i18n/              # Internationalization
 ├── locales/           # Translation files
 ├── response/          # HTTP response helpers
-├── tests/             # Integration tests
 ├── types/             # Custom types
 ├── validator/         # Validation utilities
 ├── go.mod
