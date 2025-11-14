@@ -313,11 +313,11 @@ fmt.Println("Message ID:", msgID)
 
 ## Best Practices
 
-1. **JSON Validation**: Always use `IsJSON()` before parsing untrusted JSON strings
-2. **Nil Safety**: Use pointer value functions when dereferencing potentially nil pointers
-3. **Optional Fields**: Use pointer types for optional struct fields
-4. **Error Handling**: Check errors returned by `FromJSON()`
-5. **Unique IDs**: Use appropriate ID generator based on your use case
+1. **JSON Unmarshaling**: Always check errors returned by `UnmarshalTo()` and `UnmarshalFromMap()`
+2. **Nil Safety**: Use `DerefPointer()` when dereferencing potentially nil pointers with safe defaults
+3. **Optional Fields**: Use pointer types for optional struct fields and `Pointer()` to create them
+4. **Phone Normalization**: Always normalize phone numbers before storage or validation
+5. **Unique IDs**: Use appropriate ID generator based on your use case (transaction, message, or general unique ID)
 
 ## Testing
 
