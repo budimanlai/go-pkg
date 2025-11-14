@@ -10,10 +10,11 @@ A comprehensive Go utility package providing essential tools for web development
 
 - **i18n**: Multi-language support with JSON-based locales and Fiber integration
 - **Response**: Standardized HTTP response utilities with i18n support
+- **Validator**: Struct validation with user-friendly, multilingual error messages
 - **Types**: Custom time types (UTCTime) for consistent UTC JSON serialization
 - **Helpers**: Utility functions for pointers, JSON handling, string manipulation, and ID generation
-- **Databases**: MySQL utilities (expandable for other databases)
-- **Validator**: Input validation helpers
+- **Databases**: MySQL and PostgreSQL database utilities with GORM integration
+- **Logger**: Logging utilities with timestamp support
 
 ## Installation
 
@@ -66,12 +67,35 @@ event := Event{CreatedAt: types.UTCTime(time.Now())}
 
 ## Documentation
 
-See [docs/](docs/) folder for detailed documentation of each package:
+Comprehensive documentation is available in the [docs/](docs/) folder:
 
-- [i18n](docs/i18n.md) - Internationalization utilities
-- [response](docs/response.md) - HTTP response helpers
-- [datetime](docs/datetime.md) - Custom time types
-- [helpers](docs/helpers.md) - General utility functions
+### Main Packages
+
+- **[databases](docs/databases.md)** - MySQL and PostgreSQL database management with GORM
+- **[helpers](docs/helpers.md)** - JSON utilities, pointer operations, string helpers, ID generation
+- **[i18n](docs/i18n.md)** - Internationalization with go-i18n and Fiber middleware
+- **[logger](docs/logger.md)** - Logging utilities with timestamp support
+- **[types](docs/types.md)** - Custom UTCTime type for timezone-safe JSON handling
+
+### Response Package (Multiple Files)
+
+The response package documentation is organized in the [docs/response/](docs/response/) folder:
+
+- **[README](docs/response/README.md)** - Overview and quick start
+- **[Standard Responses](docs/response/standard-responses.md)** - Basic response functions (Success, Error, NotFound, BadRequest)
+- **[I18n Responses](docs/response/i18n-responses.md)** - Internationalized response functions with automatic translation
+- **[Error Handler](docs/response/error-handler.md)** - Custom Fiber error handler with i18n support
+- **[Examples](docs/response/examples.md)** - Practical examples (REST API, authentication, file upload, pagination)
+
+### Validator Package (Multiple Files)
+
+The validator package documentation is organized in the [docs/validator/](docs/validator/) folder:
+
+- **[README](docs/validator/README.md)** - Overview and quick start
+- **[Validation Tags](docs/validator/validation-tags.md)** - Complete reference for all validation rules (required, email, min, max, etc.)
+- **[Error Handling](docs/validator/error-handling.md)** - ValidationError type, error handling patterns, response formats
+- **[I18n Integration](docs/validator/i18n-integration.md)** - Multilingual validation messages setup and configuration
+- **[Examples](docs/validator/examples.md)** - Practical examples (user registration, complex structs, nested validation)
 
 ## Testing
 

@@ -1,174 +1,188 @@
-# Helpers Package Documentation
+# Helpers Package
 
-Paket helpers menyediakan berbagai utility functions untuk operasi sehari-hari dalam pengembangan Go, termasuk pointer manipulation, JSON handling, dan string utilities.
+The `helpers` package provides a collection of utility functions for common operations in Go applications, including JSON manipulation, pointer operations, and string utilities.
 
-## Pointer Utilities
+## Features
 
-### Pointer
+- 🔤 JSON string manipulation and validation
+- 👉 Safe pointer operations for primitive types
+- 🔧 Common string utilities and ID generation
+- ⚡ Type-safe and efficient implementations
+- 🧪 Well-tested and production-ready
 
-Membuat pointer dari value apapun.
+## Installation
 
-```go
-func Pointer[T any](v T) *T
-```
-
-**Contoh:**
-
-```go
-val := 42
-ptr := helpers.Pointer(val)
-// ptr adalah *int dengan value 42
-
-name := "Alice"
-namePtr := helpers.Pointer(name)
-// namePtr adalah *string dengan value "Alice"
-```
-
-### DerefPointer
-
-Dereference pointer dengan fallback default value jika nil.
+This package is part of `github.com/budimanlai/go-pkg`. Import it as:
 
 ```go
-func DerefPointer[T any](p *T, defaultValue T) T
+import "github.com/budimanlai/go-pkg/helpers"
 ```
 
-**Contoh:**
+## API Reference
 
-```go
-var ptr *int
-val := helpers.DerefPointer(ptr, 100)
-// val = 100 (karena ptr nil)
+### JSON Functions
 
-ptr = helpers.Pointer(42)
-val = helpers.DerefPointer(ptr, 100)
-// val = 42
-```
-
-## JSON Utilities
-
-### UnmarshalTo
-
-Unmarshal JSON string ke struct atau type apapun.
-
+#### UnmarshalTo
 ```go
 func UnmarshalTo[T any](jsonString string) (T, error)
 ```
+Deserializes a JSON string into a value of type T using generics.
 
-**Contoh:**
-
+**Example:**
 ```go
-type Person struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+type User struct {
+    Name  string `json:"name"`
+    Email string `json:"email"`
 }
 
-jsonStr := `{"name":"Bob","age":30}`
-person, err := helpers.UnmarshalTo[Person](jsonStr)
+jsonStr := `{"name":"John","email":"john@example.com"}`
+user, err := helpers.UnmarshalTo[User](jsonStr)
 if err != nil {
-    panic(err)
+    log.Fatal(err)
 }
-// person.Name = "Bob", person.Age = 30
-
-// Untuk map
-data, err := helpers.UnmarshalTo[map[string]interface{}](jsonStr)
-// data["name"] = "Bob", data["age"] = 30.0
+fmt.Println(user.Name) // Output: John
 ```
 
-## String Utilities
+#### UnmarshalFromMap
+```go
+func UnmarshalFromMap[T any](dataMap map[string]interface{}) (T, error)
+```
+Deserializes a map[string]interface{} into a value of type T using generics.
 
-### GenerateTrxID
+**Example:**
+```go
+type User struct {
+    Name  string `json:"name"`
+    Age   int    `json:"age"`
+}
 
-Generate transaction ID unik berdasarkan timestamp dan random number.
+dataMap := map[string]interface{}{
+    "name": "John",
+    "age":  30,
+}
 
+user, err := helpers.UnmarshalFromMap[User](dataMap)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(user.Name) // Output: John
+```
+```
+
+### Pointer Functions
+
+#### StringPtr / IntPtr / BoolPtr / Float64Ptr
+```go
+func StringPtr(s string) *string
+func IntPtr(i int) *int
+func BoolPtr(b bool) *bool
+func Float64Ptr(f float64) *float64
+```
+Returns a pointer to the given value.
+
+**Example:**
+```go
+name := helpers.StringPtr("John")
+age := helpers.IntPtr(30)
+active := helpers.BoolPtr(true)
+price := helpers.Float64Ptr(99.99)
+```
+
+#### StringValue / IntValue / BoolValue / Float64Value
+```go
+func StringValue(s *string) string
+func IntValue(i *int) int
+func BoolValue(b *bool) bool
+func Float64Value(f *float64) float64
+```
+Safely dereferences a pointer, returning zero value if nil.
+
+**Example:**
+```go
+var name *string
+fmt.Println(helpers.StringValue(name)) // Output: "" (safe, no panic)
+
+name = helpers.StringPtr("John")
+fmt.Println(helpers.StringValue(name)) // Output: John
+```
+
+### String & ID Generation Functions
+
+#### GenerateTrxID
 ```go
 func GenerateTrxID() string
 ```
+Generates a unique transaction ID based on timestamp and random number.
 
-**Format:** YYMMDDHHMMSS + 4 digit random (total 16 karakter)
+**Format:** YYMMDDHHMMSS + 4 random digits (16 characters total)
 
-**Contoh:**
-
+**Example:**
 ```go
 id := helpers.GenerateTrxID()
-// Output: "2510151430521234" (contoh)
+// Output: "2511150430521234"
 ```
 
-### GenerateTrxIDWithPrefix
-
-Generate transaction ID dengan prefix.
-
+#### GenerateTrxIDWithPrefix
 ```go
 func GenerateTrxIDWithPrefix(prefix string) string
 ```
+Generates transaction ID with a custom prefix.
 
-**Contoh:**
-
+**Example:**
 ```go
 id := helpers.GenerateTrxIDWithPrefix("TXN")
-// Output: "TXN2510151430521234"
+// Output: "TXN2511150430521234"
 ```
 
-### GenerateTrxIDWithSuffix
-
-Generate transaction ID dengan suffix.
-
+#### GenerateTrxIDWithSuffix
 ```go
 func GenerateTrxIDWithSuffix(suffix string) string
 ```
+Generates transaction ID with a custom suffix.
 
-**Contoh:**
-
+**Example:**
 ```go
 id := helpers.GenerateTrxIDWithSuffix("END")
-// Output: "2510151430521234END"
+// Output: "2511150430521234END"
 ```
 
-### GenerateMessageID
-
-Generate UUID untuk message ID.
-
+#### GenerateMessageID
 ```go
 func GenerateMessageID() string
 ```
+Generates a UUID v4 for message identification.
 
-**Contoh:**
-
+**Example:**
 ```go
 id := helpers.GenerateMessageID()
 // Output: "550e8400-e29b-41d4-a716-446655440000"
 ```
 
-### GenerateUniqueID
-
-Generate unique ID pendek (8 karakter pertama dari UUID).
-
+#### GenerateUniqueID
 ```go
 func GenerateUniqueID() string
 ```
+Generates a short unique ID (first 8 characters of UUID).
 
-**Contoh:**
-
+**Example:**
 ```go
 id := helpers.GenerateUniqueID()
 // Output: "550e8400"
 ```
 
-### NormalizePhoneNumber
-
-Normalize nomor telepon dengan country code tanpa tanda +.
-
+#### NormalizePhoneNumber
 ```go
 func NormalizePhoneNumber(phone string) string
 ```
+Normalizes phone numbers to international format without the + prefix.
 
 **Rules:**
-- Remove prefix `+`
-- Jika start dengan `0`, ganti dengan `62` (Indonesia)
-- Jika tidak ada country code (62, 1, 65), default ke `62` (Indonesia)
-- Support country codes: 62 (Indonesia), 1 (US), 65 (Singapore)
+- Removes + prefix if present
+- Converts leading 0 to 62 (Indonesia)
+- Adds 62 prefix if no country code detected
+- Supports country codes: 62 (Indonesia), 1 (US), 65 (Singapore)
 
-**Contoh:**
-
+**Example:**
 ```go
 // Indonesia
 helpers.NormalizePhoneNumber("+628123456789") // "628123456789"
@@ -180,75 +194,94 @@ helpers.NormalizePhoneNumber("+658123456789") // "658123456789"
 
 // US
 helpers.NormalizePhoneNumber("+18123456789")  // "18123456789"
-
-// No country code
-helpers.NormalizePhoneNumber("23456789")      // "6223456789"
 ```
 
-## Contoh Lengkap
+## Usage Examples
+
+### Working with JSON
 
 ```go
-package main
-
-import (
-    "fmt"
-    "github.com/budimanlai/go-pkg/helpers"
-)
-
-type User struct {
-    ID    string `json:"id"`
-    Name  string `json:"name"`
-    Phone string `json:"phone"`
+type Product struct {
+    ID    int     `json:"id"`
+    Name  string  `json:"name"`
+    Price float64 `json:"price"`
 }
 
-func main() {
-    // Generate IDs
-    trxID := helpers.GenerateTrxIDWithPrefix("ORDER")
-    msgID := helpers.GenerateMessageID()
-    uniqueID := helpers.GenerateUniqueID()
+// Convert to JSON
+product := Product{ID: 1, Name: "Laptop", Price: 999.99}
+jsonStr := helpers.ToJSON(product)
 
-    fmt.Printf("Transaction ID: %s\n", trxID)
-    fmt.Printf("Message ID: %s\n", msgID)
-    fmt.Printf("Unique ID: %s\n", uniqueID)
+// Validate JSON
+if helpers.IsJSON(jsonStr) {
+    fmt.Println("Valid JSON")
+}
 
-    // Normalize phone
-    phone := helpers.NormalizePhoneNumber("08123456789")
-    fmt.Printf("Normalized phone: %s\n", phone)
-
-    // Pointer utilities
-    name := "Alice"
-    namePtr := helpers.Pointer(name)
-    derefName := helpers.DerefPointer(namePtr, "Unknown")
-    fmt.Printf("Dereferenced name: %s\n", derefName)
-
-    // JSON unmarshal
-    jsonStr := `{"id":"123","name":"Bob","phone":"08123456789"}`
-    user, err := helpers.UnmarshalTo[User](jsonStr)
-    if err != nil {
-        panic(err)
-    }
-
-    user.Phone = helpers.NormalizePhoneNumber(user.Phone)
-    fmt.Printf("User: %+v\n", user)
+// Parse JSON
+var newProduct Product
+if err := helpers.FromJSON(jsonStr, &newProduct); err != nil {
+    log.Fatal(err)
 }
 ```
+
+### Optional Fields with Pointers
+
+```go
+type User struct {
+    Name     string
+    Email    string
+    Age      *int
+    Bio      *string
+    Verified *bool
+}
+
+user := User{
+    Name:     "John Doe",
+    Email:    "john@example.com",
+    Age:      helpers.IntPtr(30),
+    Bio:      helpers.StringPtr("Software developer"),
+    Verified: helpers.BoolPtr(true),
+}
+
+// Safely access optional fields
+fmt.Println("User age:", helpers.IntValue(user.Age))
+fmt.Println("User verified:", helpers.BoolValue(user.Verified))
+```
+
+### Transaction ID Generation
+
+```go
+// Simple transaction ID
+trxID := helpers.GenerateTrxID()
+fmt.Println("Transaction ID:", trxID)
+
+// With prefix
+paymentID := helpers.GenerateTrxIDWithPrefix("PAY")
+fmt.Println("Payment ID:", paymentID)
+
+// With suffix
+orderID := helpers.GenerateTrxIDWithSuffix("ORD")
+fmt.Println("Order ID:", orderID)
+
+// UUID for messaging
+msgID := helpers.GenerateMessageID()
+fmt.Println("Message ID:", msgID)
+```
+
+## Best Practices
+
+1. **JSON Validation**: Always use `IsJSON()` before parsing untrusted JSON strings
+2. **Nil Safety**: Use pointer value functions when dereferencing potentially nil pointers
+3. **Optional Fields**: Use pointer types for optional struct fields
+4. **Error Handling**: Check errors returned by `FromJSON()`
+5. **Unique IDs**: Use appropriate ID generator based on your use case
 
 ## Testing
 
-Jalankan unit tests dengan:
-
+Run tests with:
 ```bash
-go test ./helpers
+go test ./helpers/ -v
 ```
 
-Tests mencakup:
-- Pointer dan DerefPointer dengan berbagai types
-- UnmarshalTo dengan valid dan invalid JSON
-- GenerateTrxID dan variants (format dan uniqueness)
-- GenerateMessageID dan GenerateUniqueID (format dan uniqueness)
-- NormalizePhoneNumber dengan berbagai input cases
+## License
 
-## Dependencies
-
-- `github.com/google/uuid` (untuk GenerateMessageID dan GenerateUniqueID)
-- Standard library: `strings`, `math/rand`, `time`, `encoding/json`
+This package is part of the go-pkg project and follows the same license.
