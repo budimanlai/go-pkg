@@ -67,43 +67,68 @@ if err != nil {
 }
 fmt.Println(user.Name) // Output: John
 ```
-```
 
 ### Pointer Functions
 
-#### StringPtr / IntPtr / BoolPtr / Float64Ptr
+#### Pointer
 ```go
-func StringPtr(s string) *string
-func IntPtr(i int) *int
-func BoolPtr(b bool) *bool
-func Float64Ptr(f float64) *float64
+func Pointer[T any](v T) *T
 ```
-Returns a pointer to the given value.
+Returns a pointer to the given value of any type T. This is a generic helper function useful for creating pointers to literals or values where taking the address directly is not possible.
 
 **Example:**
 ```go
-name := helpers.StringPtr("John")
-age := helpers.IntPtr(30)
-active := helpers.BoolPtr(true)
-price := helpers.Float64Ptr(99.99)
+// String pointer
+name := helpers.Pointer("John")        // *string
+fmt.Println(*name)                     // Output: John
+
+// Integer pointer
+age := helpers.Pointer(30)             // *int
+fmt.Println(*age)                      // Output: 30
+
+// Boolean pointer
+active := helpers.Pointer(true)        // *bool
+fmt.Println(*active)                   // Output: true
+
+// Float pointer
+price := helpers.Pointer(99.99)        // *float64
+fmt.Println(*price)                    // Output: 99.99
+
+// Struct pointer
+type User struct {
+    Name string
+    Age  int
+}
+user := helpers.Pointer(User{Name: "Alice", Age: 25})
+fmt.Println(user.Name)                 // Output: Alice
 ```
 
-#### StringValue / IntValue / BoolValue / Float64Value
+#### DerefPointer
 ```go
-func StringValue(s *string) string
-func IntValue(i *int) int
-func BoolValue(b *bool) bool
-func Float64Value(f *float64) float64
+func DerefPointer[T any](p *T, defaultValue T) T
 ```
-Safely dereferences a pointer, returning zero value if nil.
+Safely dereferences a pointer and returns its value. If the pointer is nil, it returns the provided defaultValue instead.
 
 **Example:**
 ```go
+// With nil pointer - returns default value
 var name *string
-fmt.Println(helpers.StringValue(name)) // Output: "" (safe, no panic)
+result := helpers.DerefPointer(name, "default")
+fmt.Println(result) // Output: "default" (safe, no panic)
 
-name = helpers.StringPtr("John")
-fmt.Println(helpers.StringValue(name)) // Output: John
+// With non-nil pointer - returns actual value
+name = helpers.Pointer("John")
+result = helpers.DerefPointer(name, "default")
+fmt.Println(result) // Output: "John"
+
+// With numbers
+var age *int
+result := helpers.DerefPointer(age, 18)
+fmt.Println(result) // Output: 18
+
+num := helpers.Pointer(30)
+result = helpers.DerefPointer(num, 18)
+fmt.Println(result) // Output: 30
 ```
 
 ### String & ID Generation Functions
@@ -207,20 +232,25 @@ type Product struct {
     Price float64 `json:"price"`
 }
 
-// Convert to JSON
-product := Product{ID: 1, Name: "Laptop", Price: 999.99}
-jsonStr := helpers.ToJSON(product)
-
-// Validate JSON
-if helpers.IsJSON(jsonStr) {
-    fmt.Println("Valid JSON")
-}
-
-// Parse JSON
-var newProduct Product
-if err := helpers.FromJSON(jsonStr, &newProduct); err != nil {
+// Parse JSON string to struct
+jsonStr := `{"id":1,"name":"Laptop","price":999.99}`
+product, err := helpers.UnmarshalTo[Product](jsonStr)
+if err != nil {
     log.Fatal(err)
 }
+fmt.Printf("Product: %s, Price: %.2f\n", product.Name, product.Price)
+
+// Convert map to struct
+dataMap := map[string]interface{}{
+    "id":    2,
+    "name":  "Mouse",
+    "price": 29.99,
+}
+product2, err := helpers.UnmarshalFromMap[Product](dataMap)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Product: %s, Price: %.2f\n", product2.Name, product2.Price)
 ```
 
 ### Optional Fields with Pointers
@@ -234,17 +264,31 @@ type User struct {
     Verified *bool
 }
 
+// Create user with optional fields
 user := User{
     Name:     "John Doe",
     Email:    "john@example.com",
-    Age:      helpers.IntPtr(30),
-    Bio:      helpers.StringPtr("Software developer"),
-    Verified: helpers.BoolPtr(true),
+    Age:      helpers.Pointer(30),
+    Bio:      helpers.Pointer("Software developer"),
+    Verified: helpers.Pointer(true),
 }
 
-// Safely access optional fields
-fmt.Println("User age:", helpers.IntValue(user.Age))
-fmt.Println("User verified:", helpers.BoolValue(user.Verified))
+// Safely access optional fields with defaults
+age := helpers.DerefPointer(user.Age, 0)
+bio := helpers.DerefPointer(user.Bio, "No bio")
+verified := helpers.DerefPointer(user.Verified, false)
+
+fmt.Printf("Age: %d, Bio: %s, Verified: %t\n", age, bio, verified)
+
+// Handling nil pointers
+var optionalUser User
+optionalUser.Name = "Jane"
+optionalUser.Email = "jane@example.com"
+// Age, Bio, Verified are nil
+
+age = helpers.DerefPointer(optionalUser.Age, 18)       // Returns 18 (default)
+bio = helpers.DerefPointer(optionalUser.Bio, "N/A")    // Returns "N/A" (default)
+verified = helpers.DerefPointer(optionalUser.Verified, false) // Returns false (default)
 ```
 
 ### Transaction ID Generation
