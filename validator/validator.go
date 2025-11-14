@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -399,6 +400,7 @@ func getUserFriendlyMessage(fieldName, tag, param, lang string) string {
 
 	// Try to get message from i18n if available
 	if i18nManager != nil {
+		fmt.Println("Tag:", tag)
 		messageKey := "validator." + tag
 		message := i18nManager.Translate(lang, messageKey, templateData)
 
@@ -414,6 +416,8 @@ func getUserFriendlyMessage(fieldName, tag, param, lang string) string {
 			return message
 		}
 	}
+
+	fmt.Println("Falling back to default English messages")
 
 	// Fallback to default English messages
 	template, exists := DefaultMessages[tag]

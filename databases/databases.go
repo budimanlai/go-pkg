@@ -157,7 +157,7 @@ func (m *DbManager) GetDb() *gorm.DB {
 //	    Logger: logger.Default.LogMode(logger.Info),
 //	}
 //	manager.OpenWithConfig(gormConfig)
-func (m *DbManager) OpenWithConfig(cfg *gorm.Config) {
+func (m *DbManager) OpenWithConfig(cfg *gorm.Config) error {
 	if m.Config.Driver == "" {
 		m.Config.Driver = MySQL
 	}
@@ -185,6 +185,7 @@ func (m *DbManager) OpenWithConfig(cfg *gorm.Config) {
 
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
+		return err
 	}
 
 	sqlDB, err := m.Db.DB()
@@ -203,6 +204,8 @@ func (m *DbManager) OpenWithConfig(cfg *gorm.Config) {
 	if m.Config.ConnMaxLifeTime >= 0 {
 		sqlDB.SetConnMaxLifetime(m.Config.ConnMaxLifeTime)
 	}
+
+	return nil
 }
 
 // Open establishes a database connection using the default GORM configuration.
@@ -219,8 +222,8 @@ func (m *DbManager) OpenWithConfig(cfg *gorm.Config) {
 //	manager := NewDbManager(config)
 //	manager.Open()
 //	defer manager.Close()
-func (m *DbManager) Open() {
-	m.OpenWithConfig(&gorm.Config{})
+func (m *DbManager) Open() error {
+	return m.OpenWithConfig(&gorm.Config{})
 }
 
 // Close gracefully closes the database connection and releases all resources.
