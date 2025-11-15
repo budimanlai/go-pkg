@@ -11,6 +11,7 @@ A comprehensive Go utility package providing essential tools for web development
 - **i18n**: Multi-language support with JSON-based locales and Fiber integration
 - **Response**: Standardized HTTP response utilities with i18n support
 - **Validator**: Struct validation with user-friendly, multilingual error messages
+- **Security**: Password hashing and verification with bcrypt
 - **Types**: Custom time types (UTCTime) for consistent UTC JSON serialization
 - **Helpers**: Utility functions for pointers, JSON handling, string manipulation, and ID generation
 - **Databases**: MySQL and PostgreSQL database utilities with GORM integration
@@ -75,6 +76,7 @@ Comprehensive documentation is available in the [docs/](docs/) folder:
 - **[helpers](docs/helpers.md)** - JSON utilities, pointer operations, string helpers, ID generation
 - **[i18n](docs/i18n.md)** - Internationalization with go-i18n and Fiber middleware
 - **[logger](docs/logger.md)** - Logging utilities with timestamp support
+- **[security](docs/security.md)** - Password hashing and verification with bcrypt
 - **[types](docs/types.md)** - Custom UTCTime type for timezone-safe JSON handling
 
 ### Response Package (Multiple Files)
@@ -128,6 +130,7 @@ go-pkg/
 ├── i18n/              # Internationalization
 ├── locales/           # Translation files
 ├── response/          # HTTP response helpers
+├── security/          # Password hashing utilities
 ├── types/             # Custom types
 ├── validator/         # Validation utilities
 ├── go.mod
