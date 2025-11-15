@@ -129,3 +129,28 @@ func NormalizePhoneNumber(phone string) string {
 
 	return phone
 }
+
+// GenerateRandomString generates a random alphanumeric string of the specified length.
+// The string consists of uppercase letters, lowercase letters, and digits.
+//
+// Parameters:
+//   - length: Desired length of the random string
+//
+// Returns:
+//   - string: Randomly generated alphanumeric string
+//
+// Example:
+//
+//	randomStr := GenerateRandomString(10)
+//	// Output: a random string like "aZ3bC9dE1F"
+func GenerateRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}

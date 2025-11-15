@@ -221,6 +221,61 @@ helpers.NormalizePhoneNumber("+658123456789") // "658123456789"
 helpers.NormalizePhoneNumber("+18123456789")  // "18123456789"
 ```
 
+#### GenerateRandomString
+```go
+func GenerateRandomString(length int) string
+```
+Generates a random alphanumeric string of the specified length.
+
+**Parameters:**
+- `length` (int): Desired length of the random string
+
+**Returns:**
+- Random string consisting of uppercase letters, lowercase letters, and digits
+
+**Example:**
+```go
+randomStr := helpers.GenerateRandomString(10)
+// Output: "aZ3bC9dE1F" (random each time)
+
+// Use cases
+apiKey := helpers.GenerateRandomString(32)
+token := helpers.GenerateRandomString(16)
+code := helpers.GenerateRandomString(6)
+```
+
+---
+
+### Date Functions
+
+#### StringToDate
+```go
+func StringToDate(dateStr string) (time.Time, error)
+```
+Converts a string to a time.Time object using the "YYYY-MM-DD" format.
+
+**Parameters:**
+- `dateStr` (string): Date string in "YYYY-MM-DD" format
+
+**Returns:**
+- `time.Time`: Parsed time object
+- `error`: Error if parsing fails
+
+**Example:**
+```go
+date, err := helpers.StringToDate("2024-11-13")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(date.Format("2006-01-02")) // Output: 2024-11-13
+
+// Invalid format
+_, err = helpers.StringToDate("13-11-2024")
+if err != nil {
+    fmt.Println("Invalid date format")
+}
+```
+
 ## Usage Examples
 
 ### Working with JSON
@@ -318,6 +373,8 @@ fmt.Println("Message ID:", msgID)
 3. **Optional Fields**: Use pointer types for optional struct fields and `Pointer()` to create them
 4. **Phone Normalization**: Always normalize phone numbers before storage or validation
 5. **Unique IDs**: Use appropriate ID generator based on your use case (transaction, message, or general unique ID)
+6. **Date Parsing**: Use `StringToDate()` for consistent date parsing in "YYYY-MM-DD" format and always handle errors
+7. **Random Strings**: Use `GenerateRandomString()` for tokens, API keys, or verification codes with appropriate length for security
 
 ## Testing
 
