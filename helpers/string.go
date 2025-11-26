@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 	"time"
 
@@ -94,37 +95,29 @@ func GenerateUniqueID() string {
 	return uuid
 }
 
-// NormalizePhoneNumber normalizes phone numbers to international format without the + prefix.
-// It handles Indonesian phone numbers (62), US/Canada (1), and Singapore (65) country codes.
-// If a phone number starts with 0, it's assumed to be Indonesian and converted to 62 format.
-// Numbers without recognized country codes are defaulted to Indonesian format (62).
+// NormalizePhoneNumber normalizes phone numbers by removing all non-numeric characters
+// and adding the Indonesian country code (62) only if the phone starts with "08".
 //
 // Parameters:
-//   - phone: Phone number string in various formats (with/without +, with/without country code)
+//   - phone: Phone number string in various formats
 //
 // Returns:
-//   - string: Normalized phone number with country code but without + prefix
+//   - string: Normalized phone number containing only digits
 //
 // Examples:
 //
-//	NormalizePhoneNumber("+628123456789")   // Returns: 628123456789
-//	NormalizePhoneNumber("08123456789")     // Returns: 628123456789
-//	NormalizePhoneNumber("8123456789")      // Returns: 628123456789
-//	NormalizePhoneNumber("+6591234567")     // Returns: 6591234567
-//	NormalizePhoneNumber("+12025551234")    // Returns: 12025551234
+//	NormalizePhoneNumber("+62-812-3456-789")  // Returns: 6281234567890
+//	NormalizePhoneNumber("0812-3456-789")     // Returns: 6281234567890
+//	NormalizePhoneNumber("812-3456-789")      // Returns: 8123456789
+//	NormalizePhoneNumber("+1-202-555-1234")   // Returns: 12025551234
 func NormalizePhoneNumber(phone string) string {
-	// Remove any + prefix
-	phone = strings.TrimPrefix(phone, "+")
+	// Remove all non-numeric characters
+	re := regexp.MustCompile(`[^0-9]`)
+	phone = re.ReplaceAllString(phone, "")
 
-	// If starts with 0, replace with 62 (Indonesia country code)
-	if strings.HasPrefix(phone, "0") {
-		phone = "62" + phone[1:]
-	}
-
-	// Ensure it starts with country code
-	if !strings.HasPrefix(phone, "62") && !strings.HasPrefix(phone, "1") && !strings.HasPrefix(phone, "65") {
-		// Default to Indonesia if no country code
-		phone = "62" + phone
+	// If starts with 08, replace with 628
+	if strings.HasPrefix(phone, "08") {
+		phone = "628" + phone[2:]
 	}
 
 	return phone
