@@ -5,6 +5,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type PaginationResult struct {
+	Data      any   `json:"data"`
+	Total     int64 `json:"total"`
+	TotalPage int   `json:"total_page"`
+	Page      int   `json:"page"`
+	Limit     int   `json:"limit"`
+}
+
 var (
 	// i18nManager holds the global I18nManager instance for response translations
 	i18nManager *i18n.I18nManager
@@ -138,6 +146,14 @@ func SuccessI18n(c *fiber.Ctx, messageID string, data interface{}) error {
 	}
 	message := i18nManager.Translate(getLanguageFromContext(c), messageID, nil)
 	return Success(c, message, data)
+}
+
+func SuccessWithPaginationI18n(c *fiber.Ctx, messageID string, data PaginationResult) error {
+	if i18nManager == nil {
+		return Success(c, messageID, data)
+	}
+	message := i18nManager.Translate(getLanguageFromContext(c), messageID, nil)
+	return SuccessWithPagination(c, message, data)
 }
 
 // ValidationErrorI18n returns a 400 Bad Request response with validation error details.
@@ -318,5 +334,19 @@ func Success(c *fiber.Ctx, message string, data interface{}) error {
 			"message": message,
 		},
 		"data": data,
+	})
+}
+
+func SuccessWithPagination(c *fiber.Ctx, message string, data PaginationResult) error {
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"meta": fiber.Map{
+			"success":    true,
+			"message":    message,
+			"total":      data.Total,
+			"total_page": data.TotalPage,
+			"page":       data.Page,
+			"limit":      data.Limit,
+		},
+		"data": data.Data,
 	})
 }
