@@ -1,0 +1,31 @@
+Fungsi GetURL sudah diupdate! Implementasinya mencakup:
+
+Clean path: Menggunakan filepath.Clean untuk membersihkan path
+Convert ke URL format: filepath.ToSlash untuk mengubah backslash menjadi forward slash (penting untuk Windows)
+Hapus leading slash: Menghindari double slash di URL
+Gabungkan dengan BaseURL: Menambahkan "/" hanya jika diperlukan untuk menghindari URL seperti http://example.com//file.png
+URL yang dihasilkan akan lebih konsisten dan aman untuk digunakan.
+
+Fungsi GetURL sudah diupdate! Implementasinya mencakup:
+
+Clean path: Menggunakan filepath.Clean untuk membersihkan path
+Convert ke URL format: filepath.ToSlash untuk mengubah backslash menjadi forward slash (penting untuk Windows)
+Hapus leading slash: Menghindari double slash di URL
+Gabungkan dengan BaseURL: Menambahkan "/" hanya jika diperlukan untuk menghindari URL seperti http://example.com//file.png
+URL yang dihasilkan akan lebih konsisten dan aman untuk digunakan.
+
+Fungsi GetURL sudah diupdate! Implementasinya mencakup:
+
+Clean path: Menggunakan filepath.Clean untuk membersihkan path
+Convert ke URL format: filepath.ToSlash untuk mengubah backslash menjadi forward slash (penting untuk Windows)
+Hapus leading slash: Menghindari double slash di URL
+Gabungkan dengan BaseURL: Menambahkan "/" hanya jika diperlukan untuk menghindari URL seperti http://example.com//file.png
+URL yang dihasilkan akan lebih konsisten dan aman untuk digunakan.
+
+Fungsi GetURL sudah diupdate! Implementasinya mencakup:
+
+Clean path: Menggunakan filepath.Clean untuk membersihkan path
+Convert ke URL format: filepath.ToSlash untuk mengubah backslash menjadi forward slash (penting untuk Windows)
+Hapus leading slash: Menghindari double slash di URL
+Gabungkan dengan BaseURL: Menambahkan "/" hanya jika diperlukan untuk menghindari URL seperti http://example.com//file.png
+URL yang dihasilkan akan lebih konsisten dan aman untuk digunakan.
