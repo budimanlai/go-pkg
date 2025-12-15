@@ -179,25 +179,42 @@ func (s3s *S3Storage) GetSignedURL(path string, expirySeconds int64) (string, er
 		return "", fmt.Errorf("failed to generate signed URL: %w", err)
 	}
 
-	// If PublicURL is provided, replace the endpoint with the public domain
+	// If PublicURL is provided, replace with custom domain and path
 	if s3s.Config.PublicURL != "" {
-		parsedURL, err := url.Parse(presignedURL.URL)
+		parsedPresigned, err := url.Parse(presignedURL.URL)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse presigned URL: %w", err)
 		}
 
-		// Parse the public domain
-		publicURL, err := url.Parse(s3s.Config.PublicURL)
+		// Parse the public URL
+		parsedPublic, err := url.Parse(s3s.Config.PublicURL)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse public domain: %w", err)
+			return "", fmt.Errorf("failed to parse public URL: %w", err)
 		}
 
-		// Replace the scheme and host with public domain
-		parsedURL.Scheme = publicURL.Scheme
-		parsedURL.Host = publicURL.Host
+		// Build new URL with public domain and path
+		// PublicURL might have path prefix like /storage/secure/
+		publicPath := strings.TrimSuffix(parsedPublic.Path, "/")
 
-		// Keep all query parameters (signature, expiry, etc.)
-		return parsedURL.String(), nil
+		// Combine public path with file key
+		finalPath := publicPath
+		if key != "" {
+			if publicPath != "" {
+				finalPath = publicPath + "/" + key
+			} else {
+				finalPath = "/" + key
+			}
+		}
+
+		// Build the final URL
+		finalURL := url.URL{
+			Scheme:   parsedPublic.Scheme,
+			Host:     parsedPublic.Host,
+			Path:     finalPath,
+			RawQuery: parsedPresigned.RawQuery, // Keep signature and query params
+		}
+
+		return finalURL.String(), nil
 	}
 
 	return presignedURL.URL, nil
