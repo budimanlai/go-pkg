@@ -52,6 +52,31 @@ func (ls *LocalStorage) Save(sourceFile string, destination string) error {
 	return nil
 }
 
+func (ls *LocalStorage) SaveFromReader(reader io.Reader, destination string) error {
+	// Construct the full destination path
+	destPath := filepath.Join(ls.UploadDir, destination)
+
+	// Create the directory if it doesn't exist
+	destDir := filepath.Dir(destPath)
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	// Create the destination file
+	dstFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer dstFile.Close()
+
+	// Copy the content from reader to the destination file
+	if _, err := io.Copy(dstFile, reader); err != nil {
+		return fmt.Errorf("failed to copy file from reader: %w", err)
+	}
+
+	return nil
+}
+
 func (ls *LocalStorage) Delete(path string) error {
 	// Construct the full file path
 	filePath := filepath.Join(ls.UploadDir, path)

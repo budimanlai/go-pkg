@@ -1,5 +1,7 @@
 package storage
 
+import "io"
+
 type Storage struct {
 	Storage BaseStorage
 }
@@ -15,6 +17,10 @@ func NewStorage(base BaseStorage) *Storage {
 // Save uploads a file from sourceFile path to the destination path in the storage system.
 func (s *Storage) Save(sourceFile string, destination string) error {
 	return s.Storage.Save(sourceFile, destination)
+}
+
+func (s *Storage) SaveFromReader(reader io.Reader, destination string) error {
+	return s.Storage.SaveFromReader(reader, destination)
 }
 
 // Delete removes the file at the specified path from the storage system.

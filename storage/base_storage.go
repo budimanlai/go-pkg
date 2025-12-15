@@ -1,8 +1,13 @@
 package storage
 
+import "io"
+
 type BaseStorage interface {
 	// Save uploads a file from sourceFile path to the destination path in the storage system.
 	Save(sourceFile string, destination string) error
+
+	// SaveFromReader uploads a file from an io.Reader to the destination path in the storage system.
+	SaveFromReader(reader io.Reader, destination string) error
 
 	// Delete removes the file at the specified path from the storage system.
 	Delete(path string) error

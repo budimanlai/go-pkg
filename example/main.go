@@ -20,8 +20,8 @@ func fileStorage() {
 		Bucket:          "public",
 		AccessKeyID:     "admin",
 		SecretAccessKey: "admin123",
-		ServerURL:       "http://localhost:8333",
-		BaseURL:         "http://localhost:8888/buckets/public",
+		EndpointURL:     "http://localhost:8333",
+		PublicURL:       "http://localhost:8888/buckets/public",
 	}
 	s3Storage := storage.NewS3Storage(config)
 	fileStorage := storage.NewStorage(s3Storage)

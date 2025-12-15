@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
@@ -22,14 +24,16 @@ type S3Config struct {
 	Bucket          string
 	AccessKeyID     string
 	SecretAccessKey string
-	ServerURL       string
-	BaseURL         string
+	EndpointURL     string
+	PublicURL       string
+	PrivateURL      string
 }
 
 type S3Storage struct {
 	Config        S3Config
 	client        *s3.Client
 	presignClient *s3.PresignClient
+	uploader      *manager.Uploader
 }
 
 func NewS3Storage(s3Config S3Config) BaseStorage {
@@ -52,18 +56,20 @@ func NewS3Storage(s3Config S3Config) BaseStorage {
 		o.UsePathStyle = true
 
 		// Set custom endpoint if BaseURL is provided
-		if s3Config.ServerURL != "" {
-			o.BaseEndpoint = aws.String(s3Config.ServerURL)
+		if s3Config.EndpointURL != "" {
+			o.BaseEndpoint = aws.String(s3Config.EndpointURL)
 		}
 	})
 
 	// Create a presigner
 	presigner := s3.NewPresignClient(client)
+	uploader := manager.NewUploader(client)
 
 	return &S3Storage{
 		Config:        s3Config,
 		client:        client,
 		presignClient: presigner,
+		uploader:      uploader,
 	}
 }
 
@@ -75,15 +81,19 @@ func (s3s *S3Storage) Save(sourceFile string, destination string) error {
 	}
 	defer file.Close()
 
+	return s3s.SaveFromReader(file, destination)
+}
+
+func (s3s *S3Storage) SaveFromReader(reader io.Reader, destination string) error {
 	// Clean the destination path
 	key := filepath.ToSlash(filepath.Clean(destination))
 	key = strings.TrimPrefix(key, "/")
 
 	// Upload the file to S3
-	_, err = s3s.client.PutObject(context.TODO(), &s3.PutObjectInput{
+	_, err := s3s.uploader.Upload(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(s3s.Config.Bucket),
 		Key:    aws.String(key),
-		Body:   file,
+		Body:   reader,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to upload file to S3: %w", err)
@@ -146,7 +156,7 @@ func (s3s *S3Storage) GetURL(path string) (string, error) {
 	cleanPath = strings.TrimPrefix(cleanPath, "/")
 
 	// Combine base URL with path
-	url := s3s.Config.BaseURL
+	url := s3s.Config.PublicURL
 	if !strings.HasSuffix(url, "/") && cleanPath != "" {
 		url += "/"
 	}
@@ -169,5 +179,13 @@ func (s3s *S3Storage) GetSignedURL(path string, expirySeconds int64) (string, er
 		return "", fmt.Errorf("failed to generate signed URL: %w", err)
 	}
 
-	return presignedURL.URL, nil
+	var url string
+	if s3s.Config.PrivateURL != "" {
+		// Replace the base URL with PrivateURL if provided + config.Buckets
+		url = strings.Replace(presignedURL.URL, s3s.Config.EndpointURL+"/"+s3s.Config.Bucket, s3s.Config.PrivateURL, 1)
+	} else {
+		url = presignedURL.URL
+	}
+
+	return url, nil
 }
