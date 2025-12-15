@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,7 +27,6 @@ type S3Config struct {
 	SecretAccessKey string
 	EndpointURL     string
 	PublicURL       string
-	PrivateURL      string
 }
 
 type S3Storage struct {
@@ -55,7 +55,7 @@ func NewS3Storage(s3Config S3Config) BaseStorage {
 		// Set path-style addressing for compatibility with MinIO, SeaweedFS, etc.
 		o.UsePathStyle = true
 
-		// Set custom endpoint if BaseURL is provided
+		// Set custom endpoint if EndpointURL is provided
 		if s3Config.EndpointURL != "" {
 			o.BaseEndpoint = aws.String(s3Config.EndpointURL)
 		}
@@ -156,13 +156,13 @@ func (s3s *S3Storage) GetURL(path string) (string, error) {
 	cleanPath = strings.TrimPrefix(cleanPath, "/")
 
 	// Combine base URL with path
-	url := s3s.Config.PublicURL
-	if !strings.HasSuffix(url, "/") && cleanPath != "" {
-		url += "/"
+	urlStr := s3s.Config.PublicURL
+	if !strings.HasSuffix(urlStr, "/") && cleanPath != "" {
+		urlStr += "/"
 	}
-	url += cleanPath
+	urlStr += cleanPath
 
-	return url, nil
+	return urlStr, nil
 }
 
 func (s3s *S3Storage) GetSignedURL(path string, expirySeconds int64) (string, error) {
@@ -179,13 +179,26 @@ func (s3s *S3Storage) GetSignedURL(path string, expirySeconds int64) (string, er
 		return "", fmt.Errorf("failed to generate signed URL: %w", err)
 	}
 
-	var url string
-	if s3s.Config.PrivateURL != "" {
-		// Replace the base URL with PrivateURL if provided + config.Buckets
-		url = strings.Replace(presignedURL.URL, s3s.Config.EndpointURL+"/"+s3s.Config.Bucket, s3s.Config.PrivateURL, 1)
-	} else {
-		url = presignedURL.URL
+	// If PublicURL is provided, replace the endpoint with the public domain
+	if s3s.Config.PublicURL != "" {
+		parsedURL, err := url.Parse(presignedURL.URL)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse presigned URL: %w", err)
+		}
+
+		// Parse the public domain
+		publicURL, err := url.Parse(s3s.Config.PublicURL)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse public domain: %w", err)
+		}
+
+		// Replace the scheme and host with public domain
+		parsedURL.Scheme = publicURL.Scheme
+		parsedURL.Host = publicURL.Host
+
+		// Keep all query parameters (signature, expiry, etc.)
+		return parsedURL.String(), nil
 	}
 
-	return url, nil
+	return presignedURL.URL, nil
 }
