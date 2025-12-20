@@ -1,17 +1,17 @@
 # Storage Package
 
-Package storage menyediakan abstraksi untuk operasi penyimpanan file dengan dukungan untuk multiple backends (Local filesystem dan AWS S3).
+The storage package provides an abstraction layer for file storage operations with support for multiple backends (Local filesystem and AWS S3).
 
 ## Features
 
-- ✅ Unified interface untuk berbagai storage backends
+- ✅ Unified interface for various storage backends
 - ✅ Local filesystem storage
 - ✅ AWS S3 compatible storage
-- ✅ Stream support untuk file besar
+- ✅ Stream support for large files
 - ✅ Automatic directory creation (local)
 - ✅ Public/private file access control
 - ✅ File operations: Put, Get, Delete, Exists, GetURL
-- ✅ Context support untuk timeout dan cancellation
+- ✅ Context support for timeout and cancellation
 
 ## Installation
 
@@ -22,7 +22,7 @@ go get github.com/aws/aws-sdk-go-v2/service/s3
 
 ## Storage Interface
 
-Semua storage backends mengimplementasikan interface yang sama:
+All storage backends implement the same interface:
 
 ```go
 type Storage interface {
@@ -518,7 +518,7 @@ if err != nil {
 
 ## Testing
 
-Storage interface memudahkan testing dengan mock:
+The storage interface makes testing easy with mocks:
 
 ```go
 type MockStorage struct {

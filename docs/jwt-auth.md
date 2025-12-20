@@ -1,17 +1,17 @@
 # JWT Authentication Middleware
 
-Middleware untuk autentikasi menggunakan JSON Web Token (JWT). Mendukung ekstraksi token dari header, query string, atau cookie.
+Middleware for authentication using JSON Web Tokens (JWT). Supports token extraction from header, query string, or cookie.
 
 ## Features
 
-- ✅ Validasi JWT token dengan berbagai signing methods (HS256, HS384, HS512)
+- ✅ JWT token validation with various signing methods (HS256, HS384, HS512)
 - ✅ Multiple token sources (Header, Query String, Cookie)
 - ✅ Custom auth scheme (default: Bearer)
 - ✅ Automatic token expiration checking
-- ✅ Success handler untuk custom logic setelah validasi
+- ✅ Success handler for custom logic after validation
 - ✅ Custom error handler
-- ✅ Claims storage di context
-- ✅ Support untuk semua HTTP methods
+- ✅ Claims storage in context
+- ✅ Support for all HTTP methods
 
 ## Installation
 
@@ -25,7 +25,7 @@ go get github.com/golang-jwt/jwt/v5
 
 ## Usage
 
-### Basic Usage dengan Bearer Token
+### Basic Usage with Bearer Token
 
 ```go
 package main
@@ -69,7 +69,7 @@ func main() {
 }
 ```
 
-**Generate JWT Token (untuk testing):**
+**Generate JWT Token (for testing):**
 ```go
 func generateToken(userID string, secretKey string) string {
     claims := jwt.MapClaims{
@@ -90,7 +90,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   http://localhost:3000/api/profile
 ```
 
-### Token dari Query String
+### Token from Query String
 
 ```go
 jwtAuth := auth.NewJWTAuth(auth.JWTConfig{
@@ -105,7 +105,7 @@ jwtAuth := auth.NewJWTAuth(auth.JWTConfig{
 curl http://localhost:3000/api/profile?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-### Token dari Cookie
+### Token from Cookie
 
 ```go
 jwtAuth := auth.NewJWTAuth(auth.JWTConfig{
@@ -121,9 +121,9 @@ curl --cookie "jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   http://localhost:3000/api/profile
 ```
 
-### Dengan Success Handler
+### With Success Handler
 
-Success handler dipanggil setelah JWT berhasil divalidasi:
+Success handler is called after JWT is successfully validated:
 
 ```go
 successHandler := func(c *fiber.Ctx, claims jwt.MapClaims) error {
@@ -155,7 +155,7 @@ jwtAuth := auth.NewJWTAuth(auth.JWTConfig{
 })
 ```
 
-### Dengan Custom Error Handler
+### With Custom Error Handler
 
 ```go
 customErrorHandler := func(c *fiber.Ctx, err error) error {
@@ -239,16 +239,16 @@ api.Post("/posts", createPost)
 
 | Field | Type | Description | Default |
 |-------|------|-------------|---------|
-| `SecretKey` | `string` | Secret key untuk sign/validate JWT (required) | - |
+| `SecretKey` | `string` | Secret key for signing/validating JWT (required) | - |
 | `SigningMethod` | `string` | Signing method: "HS256", "HS384", "HS512" | `"HS256"` |
 | `TokenLookup` | `string` | Token location: "header:Name", "query:name", "cookie:name" | `"header:Authorization"` |
 | `AuthScheme` | `string` | Authorization scheme (e.g., "Bearer") | `"Bearer"` |
-| `ContextKey` | `string` | Key untuk menyimpan claims di context | `"user"` |
-| `SuccessHandler` | `func` | Handler dipanggil setelah validasi berhasil | `nil` |
+| `ContextKey` | `string` | Key for storing claims in context | `"user"` |
+| `SuccessHandler` | `func` | Handler called after successful validation | `nil` |
 | `ErrorHandler` | `fiber.ErrorHandler` | Custom error handler | `nil` |
 | `Claims` | `jwt.Claims` | Custom claims struct | `jwt.MapClaims{}` |
 
-## Complete Example dengan Login
+## Complete Example with Login
 
 ```go
 package main
@@ -437,72 +437,72 @@ With custom error handler, you can customize the response format.
 ## Methods
 
 ### `NewJWTAuth(config JWTConfig) *JWTAuth`
-Membuat instance baru dari JWTAuth middleware.
+Creates a new instance of JWTAuth middleware.
 
 ### `Middleware() fiber.Handler`
-Mengembalikan Fiber middleware handler.
+Returns Fiber middleware handler.
 
 ### `GetSecretKey() string`
-Mendapatkan secret key yang digunakan.
+Gets the secret key being used.
 
 ### `GetSigningMethod() string`
-Mendapatkan signing method yang digunakan.
+Gets the signing method being used.
 
 ### `GetContextKey() string`
-Mendapatkan context key untuk menyimpan claims.
+Gets the context key for storing claims.
 
 ## Security Best Practices
 
 1. **Secret Key**
-   - Gunakan secret key yang kuat dan random
-   - Minimal 32 karakter
-   - Simpan di environment variables
-   - Jangan commit ke repository
+   - Use strong and random secret key
+   - Minimum 32 characters
+   - Store in environment variables
+   - Don't commit to repository
 
 2. **Token Expiration**
-   - Set expiration time yang reasonable (24 jam - 7 hari)
+   - Set reasonable expiration time (24 hours - 7 days)
    - Implement refresh token mechanism
-   - Force re-login untuk operasi sensitive
+   - Force re-login for sensitive operations
 
 3. **HTTPS**
-   - Selalu gunakan HTTPS di production
-   - Token dapat dicuri jika menggunakan HTTP
+   - Always use HTTPS in production
+   - Tokens can be stolen if using HTTP
 
 4. **Token Storage (Client-side)**
-   - Simpan di httpOnly cookie (recommended)
-   - Atau localStorage dengan XSS protection
-   - Hindari sessionStorage untuk persistent login
+   - Store in httpOnly cookie (recommended)
+   - Or localStorage with XSS protection
+   - Avoid sessionStorage for persistent login
 
 5. **Signing Method**
-   - Gunakan minimal HS256
-   - HS512 untuk keamanan lebih tinggi
-   - Jangan gunakan "none" algorithm
+   - Use minimum HS256
+   - HS512 for higher security
+   - Don't use "none" algorithm
 
 6. **Claims Validation**
-   - Validasi exp (expiration)
-   - Validasi iss (issuer) jika menggunakan
-   - Validasi aud (audience) jika menggunakan
+   - Validate exp (expiration)
+   - Validate iss (issuer) if used
+   - Validate aud (audience) if used
 
 7. **Token Revocation**
    - Implement blacklist mechanism
-   - Store revoked tokens di Redis/Database
-   - Check blacklist di success handler
+   - Store revoked tokens in Redis/Database
+   - Check blacklist in success handler
 
 ## Performance Tips
 
 1. **Token Size**
-   - Jangan simpan data besar di JWT claims
-   - JWT dikirim di setiap request
-   - Simpan hanya identifier (user_id), fetch detail dari database
+   - Don't store large data in JWT claims
+   - JWT is sent in every request
+   - Store only identifiers (user_id), fetch details from database
 
 2. **Caching**
-   - Cache user data dari database
-   - Gunakan Redis untuk blacklist tokens
-   - Cache permissions di memory
+   - Cache user data from database
+   - Use Redis for token blacklist
+   - Cache permissions in memory
 
 3. **Middleware Order**
-   - Letakkan JWT middleware setelah rate limiting
-   - Sebelum handler yang butuh authentication
+   - Place JWT middleware after rate limiting
+   - Before handlers that need authentication
 
 ## See Also
 

@@ -1,12 +1,12 @@
 # Middleware Package
 
-Package middleware menyediakan berbagai authentication middleware untuk aplikasi Fiber. Semua middleware dirancang dengan fokus pada fleksibilitas, keamanan, dan performa.
+The middleware package provides various authentication middleware for Fiber applications. All middleware are designed with focus on flexibility, security, and performance.
 
 ## Overview
 
-Middleware package mendukung berbagai metode autentikasi:
+The middleware package supports various authentication methods:
 
-- **JWT Authentication** - Token-based authentication dengan JSON Web Tokens
+- **JWT Authentication** - Token-based authentication with JSON Web Tokens
 - **Header Authentication** - API key authentication via headers (X-API-Key)
 - **Basic Authentication** - HTTP Basic Authentication (username/password)
 - **Query String Authentication** - API key via query parameters
@@ -130,7 +130,7 @@ curl -H "X-API-Key: api-key-123" http://localhost:3000/api/data
 
 ### 3. Basic Authentication
 
-HTTP Basic Authentication dengan username dan password.
+HTTP Basic Authentication with username and password.
 
 **Example:**
 ```go
@@ -174,7 +174,7 @@ curl http://localhost:3000/api/data?access-token=secret-token-123
 
 ### 5. Database API Key
 
-Database-backed API key storage menggunakan GORM.
+Database-backed API key storage using GORM.
 
 **Example:**
 ```go
@@ -226,7 +226,7 @@ keyProvider.Replace("old-key", "new-key")
 
 ### Database Provider (DbApiKey)
 
-Database-backed key storage dengan status management.
+Database-backed key storage with status management.
 
 ```go
 dbProvider := auth.NewDbApiKey(db)
@@ -270,7 +270,7 @@ CREATE TABLE api_key (
 
 ### Success Handler
 
-Dipanggil setelah autentikasi berhasil:
+Called after successful authentication:
 
 ```go
 successHandler := func(c *fiber.Ctx, key string) error {
@@ -297,7 +297,7 @@ headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
 
 ### Error Handler
 
-Dipanggil ketika autentikasi gagal:
+Called when authentication fails:
 
 ```go
 errorHandler := func(c *fiber.Ctx, err error) error {
@@ -317,7 +317,7 @@ headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
 
 ## Multiple Authentication Methods
 
-Kombinasi berbagai authentication methods:
+Combining different authentication methods:
 
 ```go
 app := fiber.New()
@@ -346,7 +346,7 @@ adminGroup.Delete("/users/:id", deleteUserHandler)
 
 ## Rate Limiting Integration
 
-Kombinasi dengan rate limiting:
+Combining with rate limiting:
 
 ```go
 import "github.com/gofiber/fiber/v2/middleware/limiter"

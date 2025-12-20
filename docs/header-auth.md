@@ -1,15 +1,15 @@
 # Header Authentication Middleware
 
-Middleware untuk autentikasi menggunakan header `X-API-Key` atau custom header name.
+Middleware for authentication using `X-API-Key` header or custom header name.
 
 ## Features
 
-- ✅ Validasi API key melalui HTTP header
+- ✅ API key validation via HTTP headers
 - ✅ Custom header name support
-- ✅ Success handler untuk custom logic setelah validasi berhasil
+- ✅ Success handler for custom logic after successful validation
 - ✅ Custom error handler
 - ✅ Case-insensitive header names
-- ✅ Support untuk semua HTTP methods (GET, POST, PUT, DELETE, dll)
+- ✅ Support for all HTTP methods (GET, POST, PUT, DELETE, etc.)
 
 ## Installation
 
@@ -19,7 +19,7 @@ import "github.com/budimanlai/go-pkg/middleware/auth"
 
 ## Usage
 
-### Basic Usage dengan Default Header Name (X-API-Key)
+### Basic Usage with Default Header Name (X-API-Key)
 
 ```go
 package main
@@ -76,20 +76,20 @@ headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
 curl -H "X-Custom-API-Key: my-secret-api-key-123" http://localhost:3000/api/data
 ```
 
-### Dengan Success Handler
+### With Success Handler
 
-Success handler dipanggil setelah API key berhasil divalidasi. Berguna untuk:
-- Menyimpan informasi user ke context
+Success handler is called after API key is successfully validated. Useful for:
+- Storing user information in context
 - Logging
 - Increment usage counter
-- dll
+- etc
 
 ```go
 successHandler := func(c *fiber.Ctx, token string) error {
-    // Ambil user info dari database berdasarkan token
+    // Get user info from database based on token
     user := getUserByAPIKey(token)
     
-    // Simpan ke context untuk digunakan di handler selanjutnya
+    // Store in context for use in next handlers
     c.Locals("user_id", user.ID)
     c.Locals("user_email", user.Email)
     c.Locals("api_key", token)
@@ -107,7 +107,7 @@ headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
 })
 ```
 
-### Dengan Custom Error Handler
+### With Custom Error Handler
 
 ```go
 customErrorHandler := func(c *fiber.Ctx, err error) error {
@@ -125,7 +125,7 @@ headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
 })
 ```
 
-### Dengan Database Key Provider
+### With Database Key Provider
 
 ```go
 import (
@@ -185,34 +185,32 @@ api.Get("/products", func(c *fiber.Ctx) error {
 
 | Field | Type | Description | Default |
 |-------|------|-------------|---------|
-| `KeyProvider` | `BaseKey` | Interface untuk validasi API keys (required) | - |
-| `HeaderName` | `string` | Nama header untuk API key | `"X-API-Key"` |
-| `SuccessHandler` | `*func(c *fiber.Ctx, token string) error` | Function yang dipanggil setelah validasi berhasil | `nil` |
-| `ErrorHandler` | `fiber.ErrorHandler` | Custom error handler untuk invalid/missing keys | `nil` |
-
-## Methods
+| `KeyProvider` | `BaseKey` | Interface for API key validation (required) | - |
+| `HeaderName` | `string` | Header name for API key | `"X-API-Key"` |
+| `SuccessHandler` | `*func(c *fiber.Ctx, token string) error` | Function called after successful validation | `nil` |
+| `ErrorHandler` | `fiber.ErrorHandler` | Custom error handler for invalid/missing keys | `nil` |
 
 ### `NewHeaderAuth(config HeaderAuthConfig) *HeaderAuth`
-Membuat instance baru dari HeaderAuth middleware.
+Creates a new instance of HeaderAuth middleware.
 
 ### `GetHeaderName() string`
-Mendapatkan nama header yang digunakan.
+Gets the header name being used.
 
-### `SetHeaderName(name string)`
-Mengubah nama header yang digunakan.
+### `SetHeaderName(headerName string)`
+Changes the header name being used.
 
 ### `Middleware() fiber.Handler`
-Mengembalikan Fiber middleware handler.
+Returns Fiber middleware handler.
 
 ## Response Codes
 
 - `200 OK` - API key valid
-- `401 Unauthorized` - API key invalid atau missing (default)
-- Custom status code jika menggunakan custom error handler
+- `401 Unauthorized` - Invalid or missing API key (default)
+- Custom status code if using custom error handler
 
 ## Examples
 
-### Complete Example dengan Database
+### Complete Example with Database
 
 ```go
 package main
@@ -237,7 +235,7 @@ func main() {
     // Auto migrate
     db.AutoMigrate(&auth.ApiKey{})
 
-    // Setup key provider dengan database
+    // Setup key provider with database
     keyProvider := auth.NewDbApiKey(db)
     
     // Add some keys
@@ -335,12 +333,12 @@ curl -H "X-API-Key: invalid-key" http://localhost:3000/api/data
 
 ## Best Practices
 
-1. **Gunakan HTTPS** - Selalu gunakan HTTPS di production untuk melindungi API keys
-2. **Rotate Keys** - Rutin update API keys secara berkala
-3. **Different Keys per Client** - Berikan API key yang berbeda untuk setiap client
-4. **Log Access** - Gunakan success handler untuk logging
-5. **Rate Limiting** - Kombinasikan dengan rate limiting middleware
-6. **Monitor Usage** - Track penggunaan API key untuk mendeteksi abuse
+1. **Use HTTPS** - Always use HTTPS in production to protect API keys
+2. **Rotate Keys** - Periodically update API keys
+3. **Different Keys per Client** - Give different API key for each client
+4. **Log Access** - Use success handler for logging
+5. **Rate Limiting** - Combine with rate limiting middleware
+6. **Monitor Usage** - Track API key usage to detect abuse
 
 ## See Also
 
