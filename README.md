@@ -16,6 +16,8 @@ A comprehensive Go utility package providing essential tools for web development
 - **Helpers**: Utility functions for pointers, JSON handling, string manipulation, and ID generation
 - **Databases**: MySQL and PostgreSQL database utilities with GORM integration
 - **Logger**: Logging utilities with timestamp support
+- **Storage**: File storage abstraction supporting local filesystem and AWS S3
+- **Middleware**: Authentication middleware for Fiber (Basic Auth, JWT, API Key, etc.)
 
 ## Installation
 
@@ -78,6 +80,19 @@ Comprehensive documentation is available in the [docs/](docs/) folder:
 - **[logger](docs/logger.md)** - Logging utilities with timestamp support
 - **[security](docs/security.md)** - Password hashing and verification with bcrypt
 - **[types](docs/types.md)** - Custom UTCTime type for timezone-safe JSON handling
+- **[storage](docs/storage.md)** - File storage abstraction for local filesystem and AWS S3
+- **[middleware](docs/middleware.md)** - Authentication middleware for Fiber applications
+
+### Middleware Package
+
+The middleware package provides authentication solutions for Fiber applications:
+
+- **[Middleware Overview](docs/middleware.md)** - Complete guide for all authentication methods
+- **[JWT Auth](docs/jwt-auth.md)** - JSON Web Token authentication with multiple token sources
+- **[Header Auth](docs/header-auth.md)** - Header-based API key authentication (X-API-Key)
+- Basic Auth - HTTP Basic Authentication (username/password)
+- QueryString Auth - Query parameter-based API key authentication
+- Database API Key - Database-backed API key management with GORM
 
 ### Response Package (Multiple Files)
 
@@ -98,6 +113,78 @@ The validator package documentation is organized in the [docs/validator/](docs/v
 - **[Error Handling](docs/validator/error-handling.md)** - ValidationError type, error handling patterns, response formats
 - **[I18n Integration](docs/validator/i18n-integration.md)** - Multilingual validation messages setup and configuration
 - **[Examples](docs/validator/examples.md)** - Practical examples (user registration, complex structs, nested validation)
+
+### Storage Package
+
+Abstraction layer for file storage operations supporting multiple backends:
+
+```go
+import "github.com/budimanlai/go-pkg/storage"
+
+// Local storage
+localStorage, _ := storage.NewLocalStorage(storage.LocalStorageConfig{
+    BasePath: "./uploads",
+    BaseURL:  "http://localhost:3000/uploads",
+})
+
+// S3 storage
+s3Storage, _ := storage.NewS3Storage(storage.S3StorageConfig{
+    Region:      "us-east-1",
+    Bucket:      "my-bucket",
+    Endpoint:    "", // Optional for AWS S3
+    AccessKeyID: "your-access-key",
+    SecretKey:   "your-secret-key",
+})
+
+// Use storage interface
+file, _ := os.Open("image.jpg")
+url, _ := localStorage.Put(context.Background(), "images/photo.jpg", file, nil)
+```
+
+**Features:**
+- Unified interface for local and S3 storage
+- File operations: Put, Get, Delete, Exists, GetURL
+- Stream support for large files
+- Automatic directory creation (local)
+- Public/private file support
+
+### Middleware Package
+
+Authentication middleware for Fiber applications with flexible configuration:
+
+```go
+import "github.com/budimanlai/go-pkg/middleware/auth"
+
+// JWT Authentication
+jwtAuth := auth.NewJWTAuth(auth.JWTConfig{
+    SecretKey: "your-secret-key",
+})
+app.Use(jwtAuth.Middleware())
+
+// API Key (Header-based)
+headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
+    KeyProvider: keyProvider,
+    HeaderName:  "X-API-Key",
+})
+app.Use(headerAuth.Middleware())
+
+// Basic Auth
+basicAuth := auth.NewBasicAuth(auth.BasicAuthConfig{
+    KeyProvider: keyProvider,
+})
+app.Use(basicAuth.Middleware())
+```
+
+**Features:**
+- JWT token authentication (header/query/cookie)
+- Header-based API key authentication
+- HTTP Basic Authentication
+- Query string authentication
+- Database-backed API key storage
+- In-memory key provider
+- Thread-safe operations
+- Custom success/error handlers
+- Full test coverage (87 tests)
 
 ## Testing
 
@@ -124,13 +211,17 @@ go tool cover -html=coverage.out -o coverage.html
 
 ```
 go-pkg/
-├── databases/          # Database utilities (MySQL)
+├── databases/          # Database utilities (MySQL, PostgreSQL)
 ├── docs/              # Documentation
 ├── helpers/           # General utility functions
 ├── i18n/              # Internationalization
 ├── locales/           # Translation files
+├── logger/            # Logging utilities
+├── middleware/        # Authentication middleware
+│   └── auth/          # Auth implementations (JWT, Basic, Header, etc.)
 ├── response/          # HTTP response helpers
 ├── security/          # Password hashing utilities
+├── storage/           # File storage abstraction (Local, S3)
 ├── types/             # Custom types
 ├── validator/         # Validation utilities
 ├── go.mod

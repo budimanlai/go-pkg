@@ -13,6 +13,8 @@ This document is specifically designed for AI coding agents to understand and ut
 - **Helper** utilities (JSON, pointers, strings, IDs)
 - **Custom types** (UTCTime)
 - **Logger** utilities
+- **Storage** abstraction (Local filesystem, AWS S3)
+- **Middleware** authentication (JWT, Basic Auth, API Key)
 
 ## Import Path
 
@@ -26,6 +28,7 @@ import "github.com/budimanlai/go-pkg/<package>"
 
 ### Authentication & Security
 
+**Password Hashing:**
 ```go
 import "github.com/budimanlai/go-pkg/security"
 
@@ -36,6 +39,64 @@ hashedPassword := security.HashPassword("userPassword123")
 // Verify password during login
 isValid, err := security.CheckPasswordHash("userPassword123", hashedPassword)
 // Returns: (true, nil) if match, (false, nil) if no match, (false, error) on error
+```
+
+**Middleware Authentication:**
+```go
+import "github.com/budimanlai/go-pkg/middleware/auth"
+
+// JWT Authentication
+jwtAuth := auth.NewJWTAuth(auth.JWTConfig{
+    SecretKey: "your-secret-key",
+})
+app.Use(jwtAuth.Middleware())
+
+// API Key Authentication (Header)
+keyProvider := auth.NewBaseKeyProvider()
+keyProvider.Add("api-key-123")
+headerAuth := auth.NewHeaderAuth(auth.HeaderAuthConfig{
+    KeyProvider: keyProvider,
+    HeaderName:  "X-API-Key",
+})
+app.Use(headerAuth.Middleware())
+
+// Basic Authentication
+keyProvider.AddKeyValue("admin", "password")
+basicAuth := auth.NewBasicAuth(auth.BasicAuthConfig{
+    KeyProvider: keyProvider,
+})
+app.Use(basicAuth.Middleware())
+```
+
+### File Storage
+
+```go
+import "github.com/budimanlai/go-pkg/storage"
+
+// Local Storage
+localStorage, _ := storage.NewLocalStorage(storage.LocalStorageConfig{
+    BasePath: "./uploads",
+    BaseURL:  "http://localhost:3000/uploads",
+})
+
+// S3 Storage
+s3Storage, _ := storage.NewS3Storage(storage.S3StorageConfig{
+    Region:      "us-east-1",
+    Bucket:      "my-bucket",
+    AccessKeyID: "your-access-key",
+    SecretKey:   "your-secret-key",
+})
+
+// Upload file
+file, _ := os.Open("image.jpg")
+url, _ := localStorage.Put(context.Background(), "images/photo.jpg", file, nil)
+
+// Download file
+reader, _ := localStorage.Get(context.Background(), "images/photo.jpg")
+defer reader.Close()
+
+// Delete file
+localStorage.Delete(context.Background(), "images/photo.jpg")
 ```
 
 ### HTTP Response Handling (Fiber)
@@ -682,6 +743,9 @@ go get github.com/google/uuid
 go get gorm.io/gorm
 go get gorm.io/driver/mysql
 go get gorm.io/driver/postgres
+go get github.com/golang-jwt/jwt/v5
+go get github.com/aws/aws-sdk-go-v2/service/s3
+go get gorm.io/driver/sqlite
 ```
 
 ---
@@ -714,8 +778,12 @@ For detailed documentation, refer to:
 - [I18n Package](i18n.md)
 - [Database Package](databases.md)
 - [Types Package](types.md)
+- [Storage Package](storage.md)
+- [Middleware Package](middleware.md)
+- [JWT Authentication](jwt-auth.md)
+- [Header Authentication](header-auth.md)
 
 ---
 
-**Last Updated:** November 20, 2025  
+**Last Updated:** December 20, 2025  
 **Package Version:** Compatible with Go 1.18+
