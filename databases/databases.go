@@ -167,19 +167,26 @@ func (m *DbManager) OpenWithConfig(cfg *gorm.Config) error {
 	}
 
 	var err error
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=true&loc=Local",
-		m.Config.Username,
-		m.Config.Password,
-		m.Config.Host,
-		m.Config.Port,
-		m.Config.Name,
-		m.Config.Charset,
-	)
 
 	switch m.Config.Driver {
 	case MySQL:
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=true&loc=Local",
+			m.Config.Username,
+			m.Config.Password,
+			m.Config.Host,
+			m.Config.Port,
+			m.Config.Name,
+			m.Config.Charset,
+		)
 		m.Db, err = gorm.Open(mysql.Open(dsn), cfg)
 	case Postgres:
+		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			m.Config.Host,
+			m.Config.Port,
+			m.Config.Username,
+			m.Config.Password,
+			m.Config.Name,
+		)
 		m.Db, err = gorm.Open(postgres.Open(dsn), cfg)
 	}
 

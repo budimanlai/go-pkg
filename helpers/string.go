@@ -147,3 +147,27 @@ func GenerateRandomString(length int) string {
 	}
 	return string(b)
 }
+
+// GenerateRandomNumberString generates a random numeric string of the specified length.
+// The string consists only of digits (0-9).
+//
+// Parameters:
+//   - length: Desired length of the random numeric string
+//
+// Returns:
+//   - string: Randomly generated numeric string
+//
+// Example:
+//
+//	randomNumStr := GenerateRandomNumberString(6)
+//	// Output: a random string like "482915"
+func GenerateRandomNumberString(length int) string {
+	const charset = "0123456789"
+
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
