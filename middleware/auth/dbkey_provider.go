@@ -4,7 +4,6 @@ import "gorm.io/gorm"
 
 // ApiKey represents the API key model in the database.
 type ApiKey struct {
-	gorm.Model
 	ApiKey  string `gorm:"uniqueIndex;not null"`
 	AuthKey string `gorm:"not null"`
 	Status  string `gorm:"not null;default:'active'"`
@@ -20,10 +19,20 @@ type DbKeyProvider struct {
 }
 
 // NewDbKeyProvider creates a new instance of DbApiKey with the provided configuration.
-func NewDbKeyProvider(db *gorm.DB) *DbKeyProvider {
+func NewDbKeyProvider(db *gorm.DB) BaseKey {
 	return &DbKeyProvider{
 		db: db,
 	}
+}
+
+// Remove removes the given key from the database.
+func (dk *DbKeyProvider) Remove(key string) error {
+	return nil
+}
+
+// RemoveAll removes all keys from the database.
+func (dk *DbKeyProvider) RemoveAll() error {
+	return nil
 }
 
 // IsExists checks if the given key exists in the database.

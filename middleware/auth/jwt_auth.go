@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,6 +17,12 @@ type JWTConfig struct {
 
 	// SigningMethod defines the signing method (default: HS256)
 	SigningMethod string
+
+	// ExpirationTime defines the token expiration duration
+	ExpirationTime time.Duration
+
+	// Issuer is the issuer of the token
+	Issuer string
 
 	// TokenLookup defines where to look for the JWT token
 	// Format: "<source>:<name>"
@@ -38,10 +45,6 @@ type JWTConfig struct {
 
 	// ErrorHandler is called when JWT validation fails
 	ErrorHandler fiber.ErrorHandler
-
-	// Claims is a custom claims struct that implements jwt.Claims interface
-	// If not provided, jwt.MapClaims will be used
-	Claims jwt.Claims
 }
 
 // JWTAuth provides JWT Authentication middleware for Fiber.
@@ -71,7 +74,7 @@ func NewJWTAuth(config JWTConfig) *JWTAuth {
 		config.AuthScheme = "Bearer"
 	}
 	if config.ContextKey == "" {
-		config.ContextKey = "user"
+		config.ContextKey = "claims"
 	}
 
 	return &JWTAuth{
@@ -119,6 +122,7 @@ func (j *JWTAuth) Middleware() fiber.Handler {
 
 		// Store claims in context
 		c.Locals(j.config.ContextKey, claims)
+		c.Locals("user_token", claims["ses"])
 
 		// Call success handler if provided
 		if j.config.SuccessHandler != nil {
@@ -189,12 +193,7 @@ func (j *JWTAuth) extractToken(c *fiber.Ctx) (string, error) {
 // parseToken parses and validates the JWT token
 func (j *JWTAuth) parseToken(tokenString string) (*jwt.Token, error) {
 	// Determine claims type
-	var claims jwt.Claims
-	if j.config.Claims != nil {
-		claims = j.config.Claims
-	} else {
-		claims = jwt.MapClaims{}
-	}
+	var claims jwt.Claims = jwt.MapClaims{}
 
 	// Parse token
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -202,7 +201,7 @@ func (j *JWTAuth) parseToken(tokenString string) (*jwt.Token, error) {
 		if token.Method.Alg() != j.config.SigningMethod {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(j.config.SecretKey), nil
+		return []byte(j.GetSecretKey()), nil
 	})
 
 	return token, err
@@ -234,4 +233,30 @@ func (j *JWTAuth) GetContextKey() string {
 	j.mu.RLock()
 	defer j.mu.RUnlock()
 	return j.config.ContextKey
+}
+
+// GenerateToken generates a new JWT token for the given user token
+func (j *JWTAuth) GenerateToken(userToken string) (string, error) {
+	expirationTime := time.Now().Add(time.Duration(j.config.ExpirationTime))
+
+	claims := jwt.MapClaims{
+		"ses": userToken,
+		"exp": jwt.NewNumericDate(expirationTime),
+		"iat": jwt.NewNumericDate(time.Now()),
+		"iss": j.config.Issuer,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(j.GetSecretKey()))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+func (j *JWTAuth) SetSuccessHandler(handler func(c *fiber.Ctx, claims jwt.MapClaims) error) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	j.config.SuccessHandler = handler
 }

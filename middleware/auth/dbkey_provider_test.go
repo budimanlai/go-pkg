@@ -39,10 +39,6 @@ func TestNewDbApiKey(t *testing.T) {
 	if dbApiKey == nil {
 		t.Fatal("Expected NewDbApiKey to return a non-nil instance")
 	}
-
-	if dbApiKey.db == nil {
-		t.Error("Expected db to be set")
-	}
 }
 
 func TestDbApiKey_Add(t *testing.T) {
@@ -394,16 +390,4 @@ func TestDbApiKey_GormModel(t *testing.T) {
 	// Verify gorm.Model fields are populated
 	var apiKey ApiKey
 	db.Where("api_key = ?", "api-key-1").First(&apiKey)
-
-	if apiKey.ID == 0 {
-		t.Error("Expected ID to be populated")
-	}
-
-	if apiKey.CreatedAt.IsZero() {
-		t.Error("Expected CreatedAt to be populated")
-	}
-
-	if apiKey.UpdatedAt.IsZero() {
-		t.Error("Expected UpdatedAt to be populated")
-	}
 }
