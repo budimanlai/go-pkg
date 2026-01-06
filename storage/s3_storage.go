@@ -27,6 +27,7 @@ type S3Config struct {
 	SecretAccessKey string
 	EndpointURL     string
 	PublicURL       string
+	PrivateURL      string
 }
 
 type S3Storage struct {
@@ -180,7 +181,7 @@ func (s3s *S3Storage) GetSignedURL(path string, expirySeconds int64) (string, er
 	}
 
 	// If PublicURL is provided, replace with custom domain and path
-	if s3s.Config.PublicURL != "" {
+	if s3s.Config.PrivateURL != "" {
 		parsedPresigned, err := url.Parse(presignedURL.URL)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse presigned URL: %w", err)
