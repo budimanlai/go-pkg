@@ -4,10 +4,11 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/budimanlai/go-pkg)](https://goreportcard.com/report/github.com/budimanlai/go-pkg)
 [![GoDoc](https://godoc.org/github.com/budimanlai/go-pkg?status.svg)](https://godoc.org/github.com/budimanlai/go-pkg)
 
-A comprehensive Go utility package providing essential tools for web development, including internationalization (i18n), HTTP response handling, custom types, and helper functions.
+A comprehensive Go utility package providing essential tools for web development, including a generic 3-layer CRUD foundation, internationalization (i18n), HTTP response handling, custom types, and helper functions.
 
 ## Features
 
+- **Base**: Generic 3-layer architecture (Repository, Usecase, Handler) with Redis caching, Prometheus metrics, and transaction support
 - **i18n**: Multi-language support with JSON-based locales and Fiber integration
 - **Response**: Standardized HTTP response utilities with i18n support
 - **Validator**: Struct validation with user-friendly, multilingual error messages
@@ -74,6 +75,7 @@ Comprehensive documentation is available in the [docs/](docs/) folder:
 
 ### Main Packages
 
+- **[base](docs/base.md)** - Generic 3-layer CRUD architecture (Repository, Usecase, Handler) with Redis caching, Prometheus metrics, and transactions
 - **[databases](docs/databases.md)** - MySQL and PostgreSQL database management with GORM
 - **[helpers](docs/helpers.md)** - JSON utilities, pointer operations, string helpers, ID generation
 - **[i18n](docs/i18n.md)** - Internationalization with go-i18n and Fiber middleware
@@ -211,7 +213,8 @@ go tool cover -html=coverage.out -o coverage.html
 
 ```
 go-pkg/
-├── databases/          # Database utilities (MySQL, PostgreSQL)
+├── base/              # Generic 3-layer CRUD (Repository, Usecase, Handler)
+├── databases/         # Database utilities (MySQL, PostgreSQL)
 ├── docs/              # Documentation
 ├── helpers/           # General utility functions
 ├── i18n/              # Internationalization

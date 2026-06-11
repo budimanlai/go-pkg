@@ -1,3 +1,6 @@
+v1.0.7
+- tambah package base. Pindahan dari go-core/base
+
 v1.0.6
 - Add package Storage
 - Add Auth Middleware:
