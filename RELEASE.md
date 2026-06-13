@@ -1,5 +1,6 @@
 v3.0.1
 - add function helpers/date.go: FormatDatetime, FormatDatetimePtr
+- add migration helpers: databases/migration.go
 
 v3.0.0
 - Migrate to Fiber v3
