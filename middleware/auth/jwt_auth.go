@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -41,7 +41,7 @@ type JWTConfig struct {
 	ContextKey string
 
 	// SuccessHandler is called after successful JWT validation
-	SuccessHandler func(c *fiber.Ctx, claims jwt.MapClaims) error
+	SuccessHandler func(c fiber.Ctx, claims jwt.MapClaims) error
 
 	// ErrorHandler is called when JWT validation fails
 	ErrorHandler fiber.ErrorHandler
@@ -74,7 +74,7 @@ func NewJWTAuth(config JWTConfig) *JWTAuth {
 		config.AuthScheme = "Bearer"
 	}
 	if config.ContextKey == "" {
-		config.ContextKey = "claims"
+		config.ContextKey = "user"
 	}
 
 	return &JWTAuth{
@@ -84,7 +84,7 @@ func NewJWTAuth(config JWTConfig) *JWTAuth {
 
 // Middleware returns the Fiber middleware handler for JWT Authentication.
 func (j *JWTAuth) Middleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// Extract token from request
 		tokenString, err := j.extractToken(c)
 		if err != nil {
@@ -142,7 +142,7 @@ func (j *JWTAuth) Middleware() fiber.Handler {
 }
 
 // extractToken extracts JWT token from request based on TokenLookup configuration
-func (j *JWTAuth) extractToken(c *fiber.Ctx) (string, error) {
+func (j *JWTAuth) extractToken(c fiber.Ctx) (string, error) {
 	parts := strings.Split(j.config.TokenLookup, ":")
 	if len(parts) != 2 {
 		return "", ErrJWTMissing
@@ -255,7 +255,7 @@ func (j *JWTAuth) GenerateToken(userToken string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *JWTAuth) SetSuccessHandler(handler func(c *fiber.Ctx, claims jwt.MapClaims) error) {
+func (j *JWTAuth) SetSuccessHandler(handler func(c fiber.Ctx, claims jwt.MapClaims) error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	j.config.SuccessHandler = handler

@@ -1,8 +1,8 @@
 package response
 
 import (
-	"github.com/budimanlai/go-pkg/i18n"
-	"github.com/gofiber/fiber/v2"
+	"github.com/budimanlai/go-pkg/v3/i18n"
+	"github.com/gofiber/fiber/v3"
 )
 
 type PaginationResult struct {
@@ -37,11 +37,11 @@ func SetI18nManager(manager *i18n.I18nManager) {
 // If not found, it falls back to the default language from i18nManager.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //
 // Returns:
 //   - string: Language code (e.g., "en", "id", "zh")
-func getLanguageFromContext(c *fiber.Ctx) string {
+func getLanguageFromContext(c fiber.Ctx) string {
 	if lang, ok := c.Locals("language").(string); ok {
 		return lang
 	}
@@ -54,7 +54,7 @@ func getLanguageFromContext(c *fiber.Ctx) string {
 // If i18nManager is not set, it falls back to using the messageID as the message.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - messageID: Message identifier to translate
 //
 // Returns:
@@ -63,7 +63,7 @@ func getLanguageFromContext(c *fiber.Ctx) string {
 // Example:
 //
 //	return response.NotFoundI18n(c, "user_not_found")
-func NotFoundI18n(c *fiber.Ctx, messageID string) error {
+func NotFoundI18n(c fiber.Ctx, messageID string) error {
 	if i18nManager == nil {
 		return NotFound(c, messageID)
 	}
@@ -76,7 +76,7 @@ func NotFoundI18n(c *fiber.Ctx, messageID string) error {
 // Supports template data for dynamic message interpolation.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - code: HTTP status code
 //   - messageID: Message identifier to translate
 //   - data: Template data for message interpolation (can be nil)
@@ -89,7 +89,7 @@ func NotFoundI18n(c *fiber.Ctx, messageID string) error {
 //	return response.ErrorI18n(c, 500, "database_error", map[string]string{
 //	    "Table": "users",
 //	})
-func ErrorI18n(c *fiber.Ctx, code int, messageID string, data interface{}) error {
+func ErrorI18n(c fiber.Ctx, code int, messageID string, data interface{}) error {
 	if i18nManager == nil {
 		return Error(c, code, messageID)
 	}
@@ -103,7 +103,7 @@ func ErrorI18n(c *fiber.Ctx, code int, messageID string, data interface{}) error
 // Supports template data for dynamic message interpolation.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - messageID: Message identifier to translate
 //   - data: Template data for message interpolation (can be nil)
 //
@@ -115,7 +115,7 @@ func ErrorI18n(c *fiber.Ctx, code int, messageID string, data interface{}) error
 //	return response.BadRequestI18n(c, "invalid_email", map[string]string{
 //	    "Email": "invalid@",
 //	})
-func BadRequestI18n(c *fiber.Ctx, messageID string, data interface{}) error {
+func BadRequestI18n(c fiber.Ctx, messageID string, data interface{}) error {
 	if i18nManager == nil {
 		return BadRequest(c, messageID)
 	}
@@ -127,7 +127,7 @@ func BadRequestI18n(c *fiber.Ctx, messageID string, data interface{}) error {
 // The message is translated based on the language from the request context.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - messageID: Message identifier to translate
 //   - data: Response data to include in the response body (can be nil)
 //
@@ -140,7 +140,7 @@ func BadRequestI18n(c *fiber.Ctx, messageID string, data interface{}) error {
 //	    "id": 123,
 //	    "name": "John Doe",
 //	})
-func SuccessI18n(c *fiber.Ctx, messageID string, data interface{}) error {
+func SuccessI18n(c fiber.Ctx, messageID string, data interface{}) error {
 	if i18nManager == nil {
 		return Success(c, messageID, data)
 	}
@@ -148,7 +148,7 @@ func SuccessI18n(c *fiber.Ctx, messageID string, data interface{}) error {
 	return Success(c, message, data)
 }
 
-func SuccessWithPaginationI18n(c *fiber.Ctx, messageID string, data PaginationResult) error {
+func SuccessWithPaginationI18n(c fiber.Ctx, messageID string, data PaginationResult) error {
 	if i18nManager == nil {
 		return Success(c, messageID, data)
 	}
@@ -175,7 +175,7 @@ func SuccessWithPaginationI18n(c *fiber.Ctx, messageID string, data PaginationRe
 //	}
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - err: error - The validation error (should be *validator.ValidationError)
 //
 // Returns:
@@ -186,7 +186,7 @@ func SuccessWithPaginationI18n(c *fiber.Ctx, messageID string, data PaginationRe
 //	if err := validator.ValidateStructWithContext(c, user); err != nil {
 //	    return response.ValidationErrorI18n(c, err)
 //	}
-func ValidationErrorI18n(c *fiber.Ctx, err error) error {
+func ValidationErrorI18n(c fiber.Ctx, err error) error {
 	// Type assertion to get ValidationError
 	type validationError interface {
 		First() string
@@ -221,7 +221,7 @@ func ValidationErrorI18n(c *fiber.Ctx, err error) error {
 //	}
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - message: Error message to include in response
 //
 // Returns:
@@ -230,7 +230,7 @@ func ValidationErrorI18n(c *fiber.Ctx, err error) error {
 // Example:
 //
 //	return response.NotFound(c, "User not found")
-func NotFound(c *fiber.Ctx, message string) error {
+func NotFound(c fiber.Ctx, message string) error {
 	return Error(c, fiber.StatusNotFound, message)
 }
 
@@ -247,7 +247,7 @@ func NotFound(c *fiber.Ctx, message string) error {
 //	}
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - code: HTTP status code (e.g., 400, 404, 500)
 //   - message: Error message to include in response
 //
@@ -257,7 +257,7 @@ func NotFound(c *fiber.Ctx, message string) error {
 // Example:
 //
 //	return response.Error(c, 500, "Internal server error")
-func Error(c *fiber.Ctx, code int, message string) error {
+func Error(c fiber.Ctx, code int, message string) error {
 	return c.Status(code).JSON(fiber.Map{
 		"meta": fiber.Map{
 			"success": false,
@@ -280,7 +280,7 @@ func Error(c *fiber.Ctx, code int, message string) error {
 //	}
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - message: Error message to include in response
 //
 // Returns:
@@ -289,7 +289,7 @@ func Error(c *fiber.Ctx, code int, message string) error {
 // Example:
 //
 //	return response.BadRequest(c, "Invalid email format")
-func BadRequest(c *fiber.Ctx, message string) error {
+func BadRequest(c fiber.Ctx, message string) error {
 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 		"meta": fiber.Map{
 			"success": false,
@@ -314,7 +314,7 @@ func BadRequest(c *fiber.Ctx, message string) error {
 //	}
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //   - message: Success message to include in response
 //   - data: Response data (can be nil, struct, map, slice, etc.)
 //
@@ -327,7 +327,7 @@ func BadRequest(c *fiber.Ctx, message string) error {
 //	    "id": 123,
 //	    "name": "John Doe",
 //	})
-func Success(c *fiber.Ctx, message string, data interface{}) error {
+func Success(c fiber.Ctx, message string, data interface{}) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"meta": fiber.Map{
 			"success": true,
@@ -337,7 +337,7 @@ func Success(c *fiber.Ctx, message string, data interface{}) error {
 	})
 }
 
-func SuccessWithPagination(c *fiber.Ctx, message string, data PaginationResult) error {
+func SuccessWithPagination(c fiber.Ctx, message string, data PaginationResult) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"meta": fiber.Map{
 			"success":    true,

@@ -4,8 +4,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/budimanlai/go-pkg/i18n"
-	"github.com/gofiber/fiber/v2"
+	"github.com/budimanlai/go-pkg/v3/i18n"
+	"github.com/gofiber/fiber/v3"
 	"golang.org/x/text/language"
 )
 
@@ -194,7 +194,7 @@ func TestValidateStructWithContext(t *testing.T) {
 	t.Run("context_with_english", func(t *testing.T) {
 		setupI18n()
 		app := fiber.New()
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			user := &TestUser{Name: ""}
 			err := ValidateStructWithContext(c, user)
@@ -211,7 +211,7 @@ func TestValidateStructWithContext(t *testing.T) {
 	t.Run("context_with_indonesian", func(t *testing.T) {
 		setupI18n()
 		app := fiber.New()
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "id")
 			user := &TestUser{Name: ""}
 			err := ValidateStructWithContext(c, user)
@@ -228,7 +228,7 @@ func TestValidateStructWithContext(t *testing.T) {
 	t.Run("context_without_language", func(t *testing.T) {
 		setupI18n()
 		app := fiber.New()
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			user := &TestUser{Name: ""}
 			err := ValidateStructWithContext(c, user)
 			valErr := err.(*ValidationError)

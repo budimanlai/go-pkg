@@ -3,7 +3,7 @@ package i18n
 import (
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // I18nMiddleware creates a Fiber middleware handler that extracts the language preference
@@ -28,7 +28,7 @@ import (
 //	}
 //	app.Use(I18nMiddleware(config))
 func I18nMiddleware(config I18nConfig) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		// Try to get language from various sources in order of priority
 		lang := extractLanguage(c, config)
 
@@ -48,12 +48,12 @@ func I18nMiddleware(config I18nConfig) fiber.Handler {
 // language is not supported, it falls back to the next source in the priority chain.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context containing the HTTP request
+//   - c: fiber.Ctx - The Fiber context containing the HTTP request
 //   - config: I18nConfig - Configuration with default and supported languages
 //
 // Returns:
 //   - string: The selected language code (e.g., "en", "id", "zh")
-func extractLanguage(c *fiber.Ctx, config I18nConfig) string {
+func extractLanguage(c fiber.Ctx, config I18nConfig) string {
 	// 1. Check query parameter
 	if lang := c.Query("lang"); lang != "" {
 		if isSupported(lang, config.SupportedLangs) {
@@ -141,19 +141,19 @@ func isSupported(lang string, supported []string) bool {
 // If no language is found in context, it returns "en" as a fallback.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context containing the stored language
+//   - c: fiber.Ctx - The Fiber context containing the stored language
 //
 // Returns:
 //   - string: The language code (e.g., "en", "id", "zh"), defaults to "en" if not found
 //
 // Example:
 //
-//	app.Get("/hello", func(c *fiber.Ctx) error {
+//	app.Get("/hello", func(c fiber.Ctx) error {
 //	    lang := GetLanguage(c)
 //	    message := translate(lang, "greeting")
 //	    return c.SendString(message)
 //	})
-func GetLanguage(c *fiber.Ctx) string {
+func GetLanguage(c fiber.Ctx) string {
 	if lang, ok := c.Locals("language").(string); ok {
 		return lang
 	}

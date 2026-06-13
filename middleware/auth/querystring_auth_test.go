@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestNewDefaultQueryStringAuth(t *testing.T) {
@@ -76,7 +76,7 @@ func TestQueryStringAuth_Middleware_Success(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -113,7 +113,7 @@ func TestQueryStringAuth_Middleware_InvalidKey(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -145,7 +145,7 @@ func TestQueryStringAuth_Middleware_MissingKey(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -177,7 +177,7 @@ func TestQueryStringAuth_Middleware_CustomParamName(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -209,7 +209,7 @@ func TestQueryStringAuth_Middleware_WrongParamName(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -234,7 +234,7 @@ func TestQueryStringAuth_Middleware_SuccessHandler(t *testing.T) {
 	successHandlerCalled := false
 	var capturedToken string
 
-	successHandler := func(c *fiber.Ctx, token string) error {
+	successHandler := func(c fiber.Ctx, token string) error {
 		successHandlerCalled = true
 		capturedToken = token
 		c.Locals("user_id", "user-123")
@@ -254,7 +254,7 @@ func TestQueryStringAuth_Middleware_SuccessHandler(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		userID = c.Locals("user_id").(string)
 		return c.SendString("Success")
 	})
@@ -289,7 +289,7 @@ func TestQueryStringAuth_Middleware_SuccessHandlerError(t *testing.T) {
 	keyProvider := NewBaseKeyProvider()
 	keyProvider.Add("valid-key-123")
 
-	successHandler := func(c *fiber.Ctx, token string) error {
+	successHandler := func(c fiber.Ctx, token string) error {
 		return errors.New("custom error from success handler")
 	}
 
@@ -304,7 +304,7 @@ func TestQueryStringAuth_Middleware_SuccessHandlerError(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -328,7 +328,7 @@ func TestQueryStringAuth_Middleware_CustomErrorHandler(t *testing.T) {
 	keyProvider.Add("valid-key-123")
 
 	errorHandlerCalled := false
-	customErrorHandler := func(c *fiber.Ctx, err error) error {
+	customErrorHandler := func(c fiber.Ctx, err error) error {
 		errorHandlerCalled = true
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Custom error message",
@@ -346,7 +346,7 @@ func TestQueryStringAuth_Middleware_CustomErrorHandler(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -384,7 +384,7 @@ func TestQueryStringAuth_Middleware_MultipleKeys(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -435,7 +435,7 @@ func TestQueryStringAuth_Middleware_EmptyKey(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -469,7 +469,7 @@ func TestQueryStringAuth_Middleware_SpecialCharactersInKey(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -501,7 +501,7 @@ func TestQueryStringAuth_Middleware_UpdateKeys(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -555,7 +555,7 @@ func TestQueryStringAuth_Middleware_MultipleQueryParams(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -587,16 +587,16 @@ func TestQueryStringAuth_Middleware_DifferentHTTPMethods(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(qsa.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("GET Success")
 	})
-	app.Post("/test", func(c *fiber.Ctx) error {
+	app.Post("/test", func(c fiber.Ctx) error {
 		return c.SendString("POST Success")
 	})
-	app.Put("/test", func(c *fiber.Ctx) error {
+	app.Put("/test", func(c fiber.Ctx) error {
 		return c.SendString("PUT Success")
 	})
-	app.Delete("/test", func(c *fiber.Ctx) error {
+	app.Delete("/test", func(c fiber.Ctx) error {
 		return c.SendString("DELETE Success")
 	})
 

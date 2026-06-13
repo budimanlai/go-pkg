@@ -20,10 +20,45 @@ A comprehensive Go utility package providing essential tools for web development
 - **Storage**: File storage abstraction supporting local filesystem and AWS S3
 - **Middleware**: Authentication middleware for Fiber (Basic Auth, JWT, API Key, etc.)
 
+## Versioning
+
+This module follows Go module major versioning conventions.
+
+| Version | Fiber | Import path | Status |
+|---------|-------|-------------|--------|
+| `v1.x.x` | Fiber v2 | `github.com/budimanlai/go-pkg` | Legacy (branch `v1`) |
+| `v3.x.x` | Fiber v3 | `github.com/budimanlai/go-pkg/v3` | **Active** |
+
+> **Note:** v2 is skipped intentionally to align with Fiber's own versioning.
+
+### Using v3 (current)
+
+```bash
+go get github.com/budimanlai/go-pkg/v3
+```
+
+```go
+import "github.com/budimanlai/go-pkg/v3/base"
+import "github.com/budimanlai/go-pkg/v3/response"
+// etc.
+```
+
+### Using v1 (legacy, Fiber v2)
+
+```bash
+go get github.com/budimanlai/go-pkg@v1.0.7
+```
+
+```go
+import "github.com/budimanlai/go-pkg/base"
+import "github.com/budimanlai/go-pkg/response"
+// etc.
+```
+
 ## Installation
 
 ```bash
-go get github.com/budimanlai/go-pkg
+go get github.com/budimanlai/go-pkg/v3
 ```
 
 ## Quick Start

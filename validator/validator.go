@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/budimanlai/go-pkg/i18n"
+	"github.com/budimanlai/go-pkg/v3/i18n"
 	"github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -163,11 +163,11 @@ func (ve *ValidationError) GetFieldErrors() map[string][]string {
 // If not found, it falls back to the default language from i18nManager, or "en" if i18nManager is not set.
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context
+//   - c: fiber.Ctx - The Fiber context
 //
 // Returns:
 //   - string: Language code (e.g., "en", "id", "zh")
-func getLanguageFromContext(c *fiber.Ctx) string {
+func getLanguageFromContext(c fiber.Ctx) string {
 	if lang, ok := c.Locals("language").(string); ok {
 		return lang
 	}
@@ -336,7 +336,7 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 // Otherwise, it falls back to DefaultMessages (English).
 //
 // Parameters:
-//   - c: *fiber.Ctx - The Fiber context containing language information
+//   - c: fiber.Ctx - The Fiber context containing language information
 //   - s: The struct to validate (must have validation tags)
 //
 // Returns:
@@ -344,7 +344,7 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 //
 // Example:
 //
-//	app.Post("/users", func(c *fiber.Ctx) error {
+//	app.Post("/users", func(c fiber.Ctx) error {
 //	    var user User
 //	    if err := c.BodyParser(&user); err != nil {
 //	        return err
@@ -360,7 +360,7 @@ func ValidateStructWithLang(s interface{}, lang string) error {
 //
 //	    return c.JSON(user)
 //	})
-func ValidateStructWithContext(c *fiber.Ctx, s interface{}) error {
+func ValidateStructWithContext(c fiber.Ctx, s interface{}) error {
 	lang := getLanguageFromContext(c)
 	return ValidateStructWithLang(s, lang)
 }

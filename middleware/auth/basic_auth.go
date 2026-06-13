@@ -3,16 +3,14 @@ package auth
 import (
 	"crypto/subtle"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/basicauth"
 )
 
 // BasicAuthConfig defines the configuration for BasicAuth middleware.
 type BasicAuthConfig struct {
-	KeyProvider     BaseKey
-	Unauthorized    fiber.Handler
-	ContextUsername string
-	ContextPassword string
+	KeyProvider  BaseKey
+	Unauthorized fiber.Handler
 }
 
 // BasicAuth provides Basic Authentication middleware for Fiber.
@@ -30,21 +28,13 @@ func NewBasicAuth(config BasicAuthConfig) *BasicAuth {
 // Middleware returns the Fiber middleware handler for Basic Authentication.
 func (b *BasicAuth) Middleware() fiber.Handler {
 	return basicauth.New(basicauth.Config{
-		Users: nil,
-		Authorizer: func(user, pass string) bool {
-			// retrieve password from KeyProvider
-			// use the provided username as the key
+		Authorizer: func(user, pass string, c fiber.Ctx) bool {
 			storedPass, err := b.config.KeyProvider.GetValue(user)
 			if err != nil {
 				return false
 			}
-			if subtle.ConstantTimeCompare([]byte(pass), []byte(storedPass)) == 1 {
-				return true
-			}
-			return false
+			return subtle.ConstantTimeCompare([]byte(pass), []byte(storedPass)) == 1
 		},
-		Unauthorized:    b.config.Unauthorized,
-		ContextUsername: b.config.ContextUsername,
-		ContextPassword: b.config.ContextPassword,
+		Unauthorized: b.config.Unauthorized,
 	})
 }

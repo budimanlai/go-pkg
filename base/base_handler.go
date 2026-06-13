@@ -3,9 +3,9 @@ package base
 import (
 	"strconv"
 
-	response "github.com/budimanlai/go-pkg/response"
-	"github.com/budimanlai/go-pkg/validator"
-	"github.com/gofiber/fiber/v2"
+	response "github.com/budimanlai/go-pkg/v3/response"
+	"github.com/budimanlai/go-pkg/v3/validator"
+	"github.com/gofiber/fiber/v3"
 	"github.com/jinzhu/copier"
 )
 
@@ -22,7 +22,7 @@ func NewBaseHandler[E any, C any, U any](service BaseUsecase[E]) *BaseHandler[E,
 }
 
 // Index (GET /)
-func (h *BaseHandler[E, C, U]) Index(c *fiber.Ctx) error {
+func (h *BaseHandler[E, C, U]) Index(c fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
 
@@ -41,7 +41,7 @@ func (h *BaseHandler[E, C, U]) Index(c *fiber.Ctx) error {
 }
 
 // View (GET /:id)
-func (h *BaseHandler[E, C, U]) View(c *fiber.Ctx) error {
+func (h *BaseHandler[E, C, U]) View(c fiber.Ctx) error {
 	id := c.Params("id")
 
 	entity, err := h.Service.FindByID(c.Context(), id)
@@ -62,9 +62,9 @@ func (h *BaseHandler[E, C, U]) View(c *fiber.Ctx) error {
 }
 
 // Create (POST /)
-func (h *BaseHandler[E, C, U]) Create(c *fiber.Ctx) error {
+func (h *BaseHandler[E, C, U]) Create(c fiber.Ctx) error {
 	var req C
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return response.ErrorI18n(c, fiber.StatusBadRequest, "app.error.invalid_request_body", nil)
 	}
 
@@ -85,7 +85,7 @@ func (h *BaseHandler[E, C, U]) Create(c *fiber.Ctx) error {
 }
 
 // Update (PUT /:id)
-func (h *BaseHandler[E, C, U]) Update(c *fiber.Ctx) error {
+func (h *BaseHandler[E, C, U]) Update(c fiber.Ctx) error {
 	id := c.Params("id")
 
 	// 1. Cek eksistensi data
@@ -96,7 +96,7 @@ func (h *BaseHandler[E, C, U]) Update(c *fiber.Ctx) error {
 
 	// 2. Parse Body ke object existing
 	var req U
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return response.ErrorI18n(c, fiber.StatusBadRequest, "app.error.invalid_request_body", nil)
 	}
 
@@ -117,7 +117,7 @@ func (h *BaseHandler[E, C, U]) Update(c *fiber.Ctx) error {
 }
 
 // Delete (DELETE /:id)
-func (h *BaseHandler[E, C, U]) Delete(c *fiber.Ctx) error {
+func (h *BaseHandler[E, C, U]) Delete(c fiber.Ctx) error {
 	id := c.Params("id")
 
 	if err := h.Service.Delete(c.Context(), id); err != nil {

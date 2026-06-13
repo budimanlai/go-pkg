@@ -3,7 +3,7 @@ package response
 import (
 	"errors"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // FiberErrorHandler is a custom error handler for Fiber framework that processes errors
@@ -23,7 +23,7 @@ import (
 //
 // Returns:
 //   - error: An internationalized error response based on the status code
-func FiberErrorHandler(ctx *fiber.Ctx, err error) error {
+func FiberErrorHandler(ctx fiber.Ctx, err error) error {
 	// Status code defaults to 500
 	code := fiber.StatusInternalServerError
 

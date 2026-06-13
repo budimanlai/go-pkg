@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -73,7 +73,7 @@ func TestJWTAuth_Middleware_Success(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -104,7 +104,7 @@ func TestJWTAuth_Middleware_MissingToken(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -129,7 +129,7 @@ func TestJWTAuth_Middleware_InvalidToken(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -162,7 +162,7 @@ func TestJWTAuth_Middleware_ExpiredToken(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -194,7 +194,7 @@ func TestJWTAuth_Middleware_WrongSecret(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -229,7 +229,7 @@ func TestJWTAuth_Middleware_TokenFromQuery(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -263,7 +263,7 @@ func TestJWTAuth_Middleware_TokenFromCookie(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -286,7 +286,7 @@ func TestJWTAuth_Middleware_SuccessHandler(t *testing.T) {
 	successHandlerCalled := false
 	var capturedUserID string
 
-	successHandler := func(c *fiber.Ctx, claims jwt.MapClaims) error {
+	successHandler := func(c fiber.Ctx, claims jwt.MapClaims) error {
 		successHandlerCalled = true
 		capturedUserID = claims["user_id"].(string)
 		c.Locals("custom_data", "test-data")
@@ -310,7 +310,7 @@ func TestJWTAuth_Middleware_SuccessHandler(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		customData = c.Locals("custom_data").(string)
 		return c.SendString("Success")
 	})
@@ -343,7 +343,7 @@ func TestJWTAuth_Middleware_SuccessHandler(t *testing.T) {
 func TestJWTAuth_Middleware_CustomErrorHandler(t *testing.T) {
 	errorHandlerCalled := false
 
-	customErrorHandler := func(c *fiber.Ctx, err error) error {
+	customErrorHandler := func(c fiber.Ctx, err error) error {
 		errorHandlerCalled = true
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error": "Custom JWT Error",
@@ -359,7 +359,7 @@ func TestJWTAuth_Middleware_CustomErrorHandler(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -400,7 +400,7 @@ func TestJWTAuth_Middleware_ContextStorage(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		storedClaims = c.Locals("jwt_claims").(jwt.MapClaims)
 		return c.SendString("Success")
 	})
@@ -446,16 +446,16 @@ func TestJWTAuth_Middleware_DifferentHTTPMethods(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("GET Success")
 	})
-	app.Post("/test", func(c *fiber.Ctx) error {
+	app.Post("/test", func(c fiber.Ctx) error {
 		return c.SendString("POST Success")
 	})
-	app.Put("/test", func(c *fiber.Ctx) error {
+	app.Put("/test", func(c fiber.Ctx) error {
 		return c.SendString("PUT Success")
 	})
-	app.Delete("/test", func(c *fiber.Ctx) error {
+	app.Delete("/test", func(c fiber.Ctx) error {
 		return c.SendString("DELETE Success")
 	})
 
@@ -504,7 +504,7 @@ func TestSetSecretKeyDynamic(t *testing.T) {
 	})
 
 	app.Use(jwtAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("OK")
 	})
 

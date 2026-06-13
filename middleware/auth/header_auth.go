@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/keyauth"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/extractors"
+	"github.com/gofiber/fiber/v3/middleware/keyauth"
 )
 
 // HeaderAuthConfig defines the configuration for Header-based API Key Authentication.
@@ -15,7 +16,7 @@ type HeaderAuthConfig struct {
 	HeaderName string
 
 	// function called if the key is valid
-	SuccessHandler *func(c *fiber.Ctx, token string) error
+	SuccessHandler *func(c fiber.Ctx, token string) error
 
 	// function called if the key is invalid or missing
 	ErrorHandler fiber.ErrorHandler
@@ -51,26 +52,20 @@ func (ha *HeaderAuth) SetHeaderName(name string) {
 // Middleware returns the Fiber middleware handler for Header-based API Key Authentication.
 func (ha *HeaderAuth) Middleware() fiber.Handler {
 	return keyauth.New(keyauth.Config{
-		// Define where to look for the key: "header:X-API-Key"
-		KeyLookup: "header:" + ha.config.HeaderName,
+		Extractor: extractors.FromHeader(ha.config.HeaderName),
 
-		// Define the function to validate the extracted key
-		Validator: func(c *fiber.Ctx, key string) (bool, error) {
+		Validator: func(c fiber.Ctx, key string) (bool, error) {
 			if ha.config.KeyProvider.IsExists(key) {
 				if ha.config.SuccessHandler != nil {
-					// Call the custom success handler
 					if err := (*ha.config.SuccessHandler)(c, key); err != nil {
 						return false, err
 					}
 				}
 				return true, nil
 			}
-
-			// Key is invalid
 			return false, keyauth.ErrMissingOrMalformedAPIKey
 		},
 
-		// Optional: Error handler for invalid/missing keys
 		ErrorHandler: ha.config.ErrorHandler,
 	})
 }

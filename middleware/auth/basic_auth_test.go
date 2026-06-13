@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestNewBasicAuth(t *testing.T) {
@@ -39,7 +39,7 @@ func TestBasicAuth_Middleware_Success(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -76,7 +76,7 @@ func TestBasicAuth_Middleware_InvalidPassword(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -108,7 +108,7 @@ func TestBasicAuth_Middleware_UserNotFound(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -140,7 +140,7 @@ func TestBasicAuth_Middleware_NoCredentials(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -165,7 +165,7 @@ func TestBasicAuth_Middleware_CustomUnauthorized(t *testing.T) {
 	customUnauthorizedCalled := false
 	config := BasicAuthConfig{
 		KeyProvider: keyProvider,
-		Unauthorized: func(c *fiber.Ctx) error {
+		Unauthorized: func(c fiber.Ctx) error {
 			customUnauthorizedCalled = true
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"error": "Custom unauthorized message",
@@ -178,7 +178,7 @@ func TestBasicAuth_Middleware_CustomUnauthorized(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -200,51 +200,6 @@ func TestBasicAuth_Middleware_CustomUnauthorized(t *testing.T) {
 	}
 }
 
-func TestBasicAuth_Middleware_ContextValues(t *testing.T) {
-	// Setup key provider
-	keyProvider := NewBaseKeyProvider()
-	keyProvider.AddKeyValue("testuser", "testpass")
-
-	config := BasicAuthConfig{
-		KeyProvider:     keyProvider,
-		ContextUsername: "custom_username",
-		ContextPassword: "custom_password",
-	}
-
-	basicAuth := NewBasicAuth(config)
-
-	var capturedUsername, capturedPassword string
-
-	// Create Fiber app
-	app := fiber.New()
-	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
-		capturedUsername = c.Locals("custom_username").(string)
-		capturedPassword = c.Locals("custom_password").(string)
-		return c.SendString("Success")
-	})
-
-	// Create request with valid credentials
-	req := httptest.NewRequest("GET", "/test", nil)
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("testuser:testpass")))
-
-	resp, err := app.Test(req)
-	if err != nil {
-		t.Fatalf("Failed to make request: %v", err)
-	}
-
-	if resp.StatusCode != fiber.StatusOK {
-		t.Errorf("Expected status 200, got %d", resp.StatusCode)
-	}
-
-	if capturedUsername != "testuser" {
-		t.Errorf("Expected username 'testuser', got '%s'", capturedUsername)
-	}
-
-	if capturedPassword != "testpass" {
-		t.Errorf("Expected password 'testpass', got '%s'", capturedPassword)
-	}
-}
 
 func TestBasicAuth_Middleware_MultipleUsers(t *testing.T) {
 	// Setup key provider with multiple users
@@ -262,7 +217,7 @@ func TestBasicAuth_Middleware_MultipleUsers(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -309,7 +264,7 @@ func TestBasicAuth_Middleware_EmptyCredentials(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -341,7 +296,7 @@ func TestBasicAuth_Middleware_SpecialCharactersInPassword(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 
@@ -373,7 +328,7 @@ func TestBasicAuth_Middleware_UpdateCredentials(t *testing.T) {
 	// Create Fiber app
 	app := fiber.New()
 	app.Use(basicAuth.Middleware())
-	app.Get("/test", func(c *fiber.Ctx) error {
+	app.Get("/test", func(c fiber.Ctx) error {
 		return c.SendString("Success")
 	})
 

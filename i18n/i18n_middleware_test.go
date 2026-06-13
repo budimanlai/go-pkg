@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"golang.org/x/text/language"
 )
 
@@ -22,7 +22,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("language_from_query_parameter", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -42,7 +42,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("language_from_accept_language_header", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -63,7 +63,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("default_language_when_no_preference", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -83,7 +83,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("query_parameter_overrides_header", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -104,7 +104,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("unsupported_language_falls_back", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -124,7 +124,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("unsupported_header_falls_back_to_default", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -145,7 +145,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("chinese_language_support", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -165,7 +165,7 @@ func TestI18nMiddleware(t *testing.T) {
 	t.Run("empty_query_parameter", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := c.Locals("language").(string)
 			return c.SendString(lang)
 		})
@@ -197,7 +197,7 @@ func TestExtractLanguage(t *testing.T) {
 
 	t.Run("priority_query_param", func(t *testing.T) {
 		app := fiber.New()
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := extractLanguage(c, config)
 			return c.SendString(lang)
 		})
@@ -214,7 +214,7 @@ func TestExtractLanguage(t *testing.T) {
 
 	t.Run("fallback_to_default", func(t *testing.T) {
 		app := fiber.New()
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := extractLanguage(c, config)
 			return c.SendString(lang)
 		})
@@ -338,7 +338,7 @@ func TestIsSupported(t *testing.T) {
 func TestGetLanguage(t *testing.T) {
 	t.Run("language_exists_in_context", func(t *testing.T) {
 		app := fiber.New()
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "id")
 			lang := GetLanguage(c)
 			return c.SendString(lang)
@@ -355,7 +355,7 @@ func TestGetLanguage(t *testing.T) {
 
 	t.Run("fallback_to_english_when_not_set", func(t *testing.T) {
 		app := fiber.New()
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			lang := GetLanguage(c)
 			return c.SendString(lang)
 		})
@@ -371,7 +371,7 @@ func TestGetLanguage(t *testing.T) {
 
 	t.Run("chinese_language_in_context", func(t *testing.T) {
 		app := fiber.New()
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "zh")
 			lang := GetLanguage(c)
 			return c.SendString(lang)
@@ -388,7 +388,7 @@ func TestGetLanguage(t *testing.T) {
 
 	t.Run("wrong_type_in_context", func(t *testing.T) {
 		app := fiber.New()
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", 123) // Wrong type
 			lang := GetLanguage(c)
 			return c.SendString(lang)
@@ -417,7 +417,7 @@ func TestI18nMiddlewareIntegration(t *testing.T) {
 	t.Run("full_workflow_with_getlanguage", func(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
-		app.Get("/api/greeting", func(c *fiber.Ctx) error {
+		app.Get("/api/greeting", func(c fiber.Ctx) error {
 			lang := GetLanguage(c)
 			greetings := map[string]string{
 				"en": "Hello",
@@ -457,11 +457,11 @@ func TestI18nMiddlewareIntegration(t *testing.T) {
 		app := fiber.New()
 		app.Use(I18nMiddleware(config))
 
-		app.Get("/route1", func(c *fiber.Ctx) error {
+		app.Get("/route1", func(c fiber.Ctx) error {
 			return c.SendString(GetLanguage(c))
 		})
 
-		app.Get("/route2", func(c *fiber.Ctx) error {
+		app.Get("/route2", func(c fiber.Ctx) error {
 			return c.SendString(GetLanguage(c))
 		})
 

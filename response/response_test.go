@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	pkg_i18n "github.com/budimanlai/go-pkg/i18n"
-	"github.com/gofiber/fiber/v2"
+	pkg_i18n "github.com/budimanlai/go-pkg/v3/i18n"
+	"github.com/gofiber/fiber/v3"
 	"golang.org/x/text/language"
 )
 
@@ -19,7 +19,7 @@ func TestSuccess(t *testing.T) {
 	t.Run("basic_success_response", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return Success(c, "Success message", map[string]string{"key": "value"})
 		})
 
@@ -64,7 +64,7 @@ func TestSuccess(t *testing.T) {
 	t.Run("success_with_nil_data", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return Success(c, "No data", nil)
 		})
 
@@ -82,7 +82,7 @@ func TestSuccess(t *testing.T) {
 	t.Run("success_with_array_data", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return Success(c, "List of items", []string{"item1", "item2", "item3"})
 		})
 
@@ -107,7 +107,7 @@ func TestError(t *testing.T) {
 	t.Run("basic_error_response", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return Error(c, 400, "Error message")
 		})
 
@@ -147,7 +147,7 @@ func TestError(t *testing.T) {
 	t.Run("error_with_500_status", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return Error(c, 500, "Internal server error")
 		})
 
@@ -162,7 +162,7 @@ func TestError(t *testing.T) {
 	t.Run("error_with_custom_status", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return Error(c, 403, "Forbidden")
 		})
 
@@ -179,7 +179,7 @@ func TestBadRequest(t *testing.T) {
 	t.Run("basic_bad_request", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return BadRequest(c, "Bad request message")
 		})
 
@@ -215,7 +215,7 @@ func TestBadRequest(t *testing.T) {
 	t.Run("bad_request_validation_message", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			return BadRequest(c, "Email is required")
 		})
 
@@ -236,7 +236,7 @@ func TestNotFound(t *testing.T) {
 	t.Run("basic_not_found", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return NotFound(c, "Not found message")
 		})
 
@@ -272,7 +272,7 @@ func TestNotFound(t *testing.T) {
 	t.Run("resource_not_found", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/users/:id", func(c *fiber.Ctx) error {
+		app.Get("/users/:id", func(c fiber.Ctx) error {
 			return NotFound(c, "User not found")
 		})
 
@@ -309,7 +309,7 @@ func TestSuccessI18n(t *testing.T) {
 	t.Run("success_with_english", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return SuccessI18n(c, "welcome", map[string]string{"key": "value"})
 		})
@@ -347,7 +347,7 @@ func TestSuccessI18n(t *testing.T) {
 	t.Run("success_with_indonesian", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "id")
 			return SuccessI18n(c, "welcome", nil)
 		})
@@ -368,7 +368,7 @@ func TestSuccessI18n(t *testing.T) {
 	t.Run("success_with_chinese", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "zh")
 			return SuccessI18n(c, "welcome", nil)
 		})
@@ -393,7 +393,7 @@ func TestErrorI18n(t *testing.T) {
 	t.Run("error_with_english", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return ErrorI18n(c, 500, "welcome", nil)
 		})
@@ -431,7 +431,7 @@ func TestErrorI18n(t *testing.T) {
 	t.Run("error_with_indonesian", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "id")
 			return ErrorI18n(c, 400, "welcome", nil)
 		})
@@ -452,7 +452,7 @@ func TestErrorI18n(t *testing.T) {
 	t.Run("error_with_template_data", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return ErrorI18n(c, 404, "hello_name", map[string]interface{}{"Name": "John"})
 		})
@@ -476,7 +476,7 @@ func TestBadRequestI18n(t *testing.T) {
 	t.Run("bad_request_with_english", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return BadRequestI18n(c, "welcome", nil)
 		})
@@ -501,7 +501,7 @@ func TestBadRequestI18n(t *testing.T) {
 	t.Run("bad_request_with_template", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "id")
 			return BadRequestI18n(c, "hello_name", map[string]interface{}{"Name": "Budi"})
 		})
@@ -525,7 +525,7 @@ func TestNotFoundI18n(t *testing.T) {
 	t.Run("not_found_with_english", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return NotFoundI18n(c, "welcome")
 		})
@@ -550,7 +550,7 @@ func TestNotFoundI18n(t *testing.T) {
 	t.Run("not_found_with_chinese", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "zh")
 			return NotFoundI18n(c, "welcome")
 		})
@@ -595,7 +595,7 @@ func TestValidationErrorI18n(t *testing.T) {
 	t.Run("validation_error_with_field_errors", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			mockErr := &mockValidationError{
 				firstMsg: "Email is required",
 				fieldErrors: map[string][]string{
@@ -639,7 +639,7 @@ func TestValidationErrorI18n(t *testing.T) {
 	t.Run("non_validation_error_fallback", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			return ValidationErrorI18n(c, errors.New("Some generic error"))
 		})
 
@@ -662,7 +662,7 @@ func TestValidationErrorI18n(t *testing.T) {
 	t.Run("empty_field_errors", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			mockErr := &mockValidationError{
 				firstMsg:    "Validation failed",
 				fieldErrors: map[string][]string{},
@@ -700,7 +700,7 @@ func TestFiberErrorHandler(t *testing.T) {
 			ErrorHandler: FiberErrorHandler,
 		})
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return fiber.NewError(404, "Page not found")
 		})
@@ -718,7 +718,7 @@ func TestFiberErrorHandler(t *testing.T) {
 			ErrorHandler: FiberErrorHandler,
 		})
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return fiber.NewError(400, "Invalid request")
 		})
@@ -736,7 +736,7 @@ func TestFiberErrorHandler(t *testing.T) {
 			ErrorHandler: FiberErrorHandler,
 		})
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return fiber.NewError(500, "Internal server error")
 		})
@@ -754,7 +754,7 @@ func TestFiberErrorHandler(t *testing.T) {
 			ErrorHandler: FiberErrorHandler,
 		})
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "en")
 			return errors.New("Generic error")
 		})
@@ -773,7 +773,7 @@ func TestFiberErrorHandler(t *testing.T) {
 			ErrorHandler: FiberErrorHandler,
 		})
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "id")
 			return fiber.NewError(403, "Forbidden")
 		})
@@ -798,7 +798,7 @@ func TestGetLanguageFromContext(t *testing.T) {
 		app := fiber.New()
 
 		var capturedLang string
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			c.Locals("language", "zh")
 			capturedLang = getLanguageFromContext(c)
 			return c.SendString("ok")
@@ -816,7 +816,7 @@ func TestGetLanguageFromContext(t *testing.T) {
 		app := fiber.New()
 
 		var capturedLang string
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			capturedLang = getLanguageFromContext(c)
 			return c.SendString("ok")
 		})
@@ -866,7 +866,7 @@ func TestI18nFallbackWhenManagerNil(t *testing.T) {
 	t.Run("success_i18n_fallback", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return SuccessI18n(c, "raw_message", nil)
 		})
 
@@ -886,7 +886,7 @@ func TestI18nFallbackWhenManagerNil(t *testing.T) {
 	t.Run("error_i18n_fallback", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return ErrorI18n(c, 500, "error_key", nil)
 		})
 
@@ -905,7 +905,7 @@ func TestI18nFallbackWhenManagerNil(t *testing.T) {
 	t.Run("bad_request_i18n_fallback", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Post("/test", func(c *fiber.Ctx) error {
+		app.Post("/test", func(c fiber.Ctx) error {
 			return BadRequestI18n(c, "bad_request_key", nil)
 		})
 
@@ -924,7 +924,7 @@ func TestI18nFallbackWhenManagerNil(t *testing.T) {
 	t.Run("not_found_i18n_fallback", func(t *testing.T) {
 		app := fiber.New()
 
-		app.Get("/test", func(c *fiber.Ctx) error {
+		app.Get("/test", func(c fiber.Ctx) error {
 			return NotFoundI18n(c, "not_found_key")
 		})
 
