@@ -1,3 +1,6 @@
+v3.0.1
+- add function helpers/date.go: FormatDatetime, FormatDatetimePtr
+
 v3.0.0
 - Migrate to Fiber v3
 - Module path changed to github.com/budimanlai/go-pkg/v3
