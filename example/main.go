@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/budimanlai/go-pkg/storage"
+	"github.com/budimanlai/go-pkg/v3/storage"
 )
 
 func main() {
