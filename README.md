@@ -156,34 +156,32 @@ The validator package documentation is organized in the [docs/validator/](docs/v
 Abstraction layer for file storage operations supporting multiple backends:
 
 ```go
-import "github.com/budimanlai/go-pkg/storage"
+import "github.com/budimanlai/go-pkg/v3/storage"
 
 // Local storage
-localStorage, _ := storage.NewLocalStorage(storage.LocalStorageConfig{
-    BasePath: "./uploads",
-    BaseURL:  "http://localhost:3000/uploads",
+localBackend := storage.NewLocalStorage("./uploads", "http://localhost:3000/uploads")
+
+// S3 storage (also works with MinIO, SeaweedFS, DigitalOcean Spaces, etc via EndpointURL)
+s3Backend := storage.NewS3Storage(storage.S3Config{
+    Region:          "us-east-1",
+    Bucket:          "my-bucket",
+    AccessKeyID:     "your-access-key",
+    SecretAccessKey: "your-secret-key",
+    EndpointURL:     "", // Optional, leave empty for AWS S3
 })
 
-// S3 storage
-s3Storage, _ := storage.NewS3Storage(storage.S3StorageConfig{
-    Region:      "us-east-1",
-    Bucket:      "my-bucket",
-    Endpoint:    "", // Optional for AWS S3
-    AccessKeyID: "your-access-key",
-    SecretKey:   "your-secret-key",
-})
-
-// Use storage interface
-file, _ := os.Open("image.jpg")
-url, _ := localStorage.Put(context.Background(), "images/photo.jpg", file, nil)
+// Use the storage interface
+fileStorage := storage.NewStorage(s3Backend) // or localBackend
+err := fileStorage.Save("./data/image.jpg", "images/photo.jpg")
+url, _ := fileStorage.GetURL("images/photo.jpg")
 ```
 
 **Features:**
-- Unified interface for local and S3 storage
-- File operations: Put, Get, Delete, Exists, GetURL
-- Stream support for large files
+- Unified interface for local and S3-compatible storage
+- File operations: Save, SaveFromReader, Delete, Exists, GetURL, GetSignedURL
+- Upload from a file path or an `io.Reader`
 - Automatic directory creation (local)
-- Public/private file support
+- Automatic MIME type detection on S3 uploads
 
 ### Middleware Package
 

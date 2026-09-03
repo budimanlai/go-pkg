@@ -1,37 +1,60 @@
 # Storage Package
 
-The storage package provides an abstraction layer for file storage operations with support for multiple backends (Local filesystem and AWS S3).
+The storage package provides a unified abstraction for file storage operations, with built-in backends for the local filesystem and S3-compatible object storage (AWS S3, MinIO, SeaweedFS, DigitalOcean Spaces, etc.).
 
 ## Features
 
-- ✅ Unified interface for various storage backends
+- ✅ Unified `BaseStorage` interface across backends
 - ✅ Local filesystem storage
-- ✅ AWS S3 compatible storage
-- ✅ Stream support for large files
+- ✅ S3-compatible storage (path-style addressing, custom endpoints)
+- ✅ Upload from a file path or an `io.Reader`
 - ✅ Automatic directory creation (local)
-- ✅ Public/private file access control
-- ✅ File operations: Put, Get, Delete, Exists, GetURL
-- ✅ Context support for timeout and cancellation
+- ✅ Automatic MIME type detection on S3 uploads
+- ✅ Public URL and time-limited signed URL generation
+- ✅ File operations: Save, SaveFromReader, Delete, Exists, GetURL, GetSignedURL
 
 ## Installation
 
 ```bash
-go get github.com/budimanlai/go-pkg/storage
+go get github.com/budimanlai/go-pkg/v3/storage
 go get github.com/aws/aws-sdk-go-v2/service/s3
+go get github.com/aws/aws-sdk-go-v2/feature/s3/manager
 ```
 
 ## Storage Interface
 
-All storage backends implement the same interface:
+Both backends implement `BaseStorage`:
 
 ```go
-type Storage interface {
-    Put(ctx context.Context, path string, file io.Reader, options *PutOptions) (string, error)
-    Get(ctx context.Context, path string) (io.ReadCloser, error)
-    Delete(ctx context.Context, path string) error
-    Exists(ctx context.Context, path string) (bool, error)
-    GetURL(ctx context.Context, path string) (string, error)
+type BaseStorage interface {
+    // Save uploads a file from sourceFile path to the destination path in the storage system.
+    Save(sourceFile string, destination string) error
+
+    // SaveFromReader uploads a file from an io.Reader to the destination path in the storage system.
+    SaveFromReader(reader io.Reader, destination string) error
+
+    // Delete removes the file at the specified path from the storage system.
+    Delete(path string) error
+
+    // Exists checks if a file exists at the specified path in the storage system.
+    Exists(path string) (bool, error)
+
+    // GetURL generates a publicly accessible URL for the file at the specified path.
+    GetURL(path string) (string, error)
+
+    // GetSignedURL generates a signed URL for the file at the specified path with an expiry time in seconds.
+    GetSignedURL(path string, expirySeconds int64) (string, error)
 }
+```
+
+The `Storage` wrapper delegates every call to whichever backend it holds, so application code can depend on `*storage.Storage` without caring which backend is active:
+
+```go
+type Storage struct {
+    Storage BaseStorage
+}
+
+func NewStorage(base BaseStorage) *Storage
 ```
 
 ## Local Storage
@@ -42,88 +65,65 @@ type Storage interface {
 package main
 
 import (
-    "context"
-    "os"
-    
-    "github.com/budimanlai/go-pkg/storage"
+    "fmt"
+
+    "github.com/budimanlai/go-pkg/v3/storage"
 )
 
 func main() {
-    // Create local storage instance
-    localStorage, err := storage.NewLocalStorage(storage.LocalStorageConfig{
-        BasePath: "./uploads",
-        BaseURL:  "http://localhost:3000/uploads",
-    })
+    localBackend := storage.NewLocalStorage("./uploads", "http://localhost:3000/uploads")
+    fileStorage := storage.NewStorage(localBackend)
+
+    err := fileStorage.Save("./data/document.pdf", "documents/doc.pdf")
     if err != nil {
         panic(err)
     }
-    
-    // Upload file
-    file, _ := os.Open("document.pdf")
-    defer file.Close()
-    
-    url, err := localStorage.Put(context.Background(), "documents/doc.pdf", file, nil)
-    if err != nil {
-        panic(err)
-    }
-    
-    println("File uploaded:", url)
+
+    url, _ := fileStorage.GetURL("documents/doc.pdf")
+    fmt.Println("File URL:", url)
     // Output: http://localhost:3000/uploads/documents/doc.pdf
 }
 ```
 
-### Configuration
+### Constructor
 
 ```go
-type LocalStorageConfig struct {
-    // BasePath is the base directory for file storage
-    BasePath string
-    
-    // BaseURL is the base URL for accessing files
-    BaseURL string
-}
+func NewLocalStorage(uploadDir, baseURL string) BaseStorage
 ```
+
+- `uploadDir` — base directory on disk where files are written. Subdirectories are created automatically.
+- `baseURL` — base URL prefixed to a path when building the value returned by `GetURL`.
+
+`GetSignedURL` on local storage does not generate a real signature — it just returns the same value as `GetURL`, since local files have no expiring-access concept.
 
 ### File Operations
 
-**Upload File:**
+**Upload from a file path:**
 ```go
-file, _ := os.Open("image.jpg")
-defer file.Close()
-
-url, err := localStorage.Put(context.Background(), "images/photo.jpg", file, nil)
+err := fileStorage.Save("./data/image.jpg", "images/photo.jpg")
 ```
 
-**Download File:**
+**Upload from an `io.Reader`:**
 ```go
-reader, err := localStorage.Get(context.Background(), "images/photo.jpg")
-if err != nil {
-    log.Fatal(err)
-}
-defer reader.Close()
+f, _ := os.Open("image.jpg")
+defer f.Close()
 
-// Save to file
-output, _ := os.Create("downloaded.jpg")
-defer output.Close()
-io.Copy(output, reader)
+err := fileStorage.SaveFromReader(f, "images/photo.jpg")
 ```
 
-**Check if File Exists:**
+**Check if a file exists:**
 ```go
-exists, err := localStorage.Exists(context.Background(), "images/photo.jpg")
-if exists {
-    println("File exists")
-}
+exists, err := fileStorage.Exists("images/photo.jpg")
 ```
 
-**Delete File:**
+**Delete a file:**
 ```go
-err := localStorage.Delete(context.Background(), "images/photo.jpg")
+err := fileStorage.Delete("images/photo.jpg")
 ```
 
-**Get File URL:**
+**Get a public URL:**
 ```go
-url, err := localStorage.GetURL(context.Background(), "images/photo.jpg")
+url, err := fileStorage.GetURL("images/photo.jpg")
 // Returns: http://localhost:3000/uploads/images/photo.jpg
 ```
 
@@ -135,428 +135,177 @@ url, err := localStorage.GetURL(context.Background(), "images/photo.jpg")
 package main
 
 import (
-    "context"
-    "os"
-    
-    "github.com/budimanlai/go-pkg/storage"
+    "fmt"
+
+    "github.com/budimanlai/go-pkg/v3/storage"
 )
 
 func main() {
-    // Create S3 storage instance
-    s3Storage, err := storage.NewS3Storage(storage.S3StorageConfig{
-        Region:      "us-east-1",
-        Bucket:      "my-bucket",
-        AccessKeyID: os.Getenv("AWS_ACCESS_KEY_ID"),
-        SecretKey:   os.Getenv("AWS_SECRET_ACCESS_KEY"),
-    })
+    config := storage.S3Config{
+        Region:          "your_bucket_region",
+        Bucket:          "your_bucket_name",
+        AccessKeyID:     "your_access_key_id",
+        SecretAccessKey: "your_secret_access_key",
+        EndpointURL:     "your_endpoint_url",
+    }
+
+    s3Backend := storage.NewS3Storage(config)
+    fileStorage := storage.NewStorage(s3Backend)
+
+    err := fileStorage.Save("./data/image1.png", "public/avatar/image1.png")
     if err != nil {
         panic(err)
     }
-    
-    // Upload file
-    file, _ := os.Open("document.pdf")
-    defer file.Close()
-    
-    url, err := s3Storage.Put(context.Background(), "documents/doc.pdf", file, &storage.PutOptions{
-        ContentType: "application/pdf",
-        Public:      true,
-    })
-    if err != nil {
-        panic(err)
-    }
-    
-    println("File uploaded:", url)
+
+    url, _ := fileStorage.GetURL("public/avatar/image1.png")
+    fmt.Println("File URL:", url)
+
+    signedURL, _ := fileStorage.GetSignedURL("public/avatar/image1.png", 60)
+    fmt.Println("Signed URL (60s):", signedURL)
 }
 ```
 
 ### Configuration
 
 ```go
-type S3StorageConfig struct {
-    // Region is the AWS region
+type S3Config struct {
+    // Region is the S3 region
     Region string
-    
+
     // Bucket is the S3 bucket name
     Bucket string
-    
-    // Endpoint is optional for S3-compatible services (MinIO, DigitalOcean Spaces, etc.)
-    // Leave empty for AWS S3
-    Endpoint string
-    
-    // AccessKeyID is the AWS access key
+
+    // AccessKeyID is the S3 access key
     AccessKeyID string
-    
-    // SecretKey is the AWS secret key
-    SecretKey string
-    
-    // UsePathStyle forces path-style addressing (for MinIO and some S3-compatible services)
-    UsePathStyle bool
+
+    // SecretAccessKey is the S3 secret key
+    SecretAccessKey string
+
+    // EndpointURL is the S3-compatible service endpoint (MinIO, SeaweedFS,
+    // DigitalOcean Spaces, etc). Leave empty to use the default AWS S3 endpoint.
+    // GetURL and GetSignedURL both build their URLs from this value, since the
+    // client always uses path-style addressing (EndpointURL/Bucket/Key).
+    EndpointURL string
 }
 ```
+
+`NewS3Storage` always enables path-style addressing (`UsePathStyle = true`) for compatibility with MinIO/SeaweedFS-style services. If `EndpointURL` is set, it becomes the S3 client's base endpoint; if left empty, the AWS SDK's default endpoint resolution for `Region` is used instead.
 
 ### S3-Compatible Services
 
 **MinIO:**
 ```go
-s3Storage, err := storage.NewS3Storage(storage.S3StorageConfig{
-    Region:       "us-east-1",
-    Bucket:       "my-bucket",
-    Endpoint:     "http://localhost:9000",
-    AccessKeyID:  "minioadmin",
-    SecretKey:    "minioadmin",
-    UsePathStyle: true,
-})
+config := storage.S3Config{
+    Region:          "us-east-1",
+    Bucket:          "my-bucket",
+    AccessKeyID:     "minioadmin",
+    SecretAccessKey: "minioadmin",
+    EndpointURL:     "http://localhost:9000",
+}
 ```
 
 **DigitalOcean Spaces:**
 ```go
-s3Storage, err := storage.NewS3Storage(storage.S3StorageConfig{
-    Region:      "nyc3",
-    Bucket:      "my-space",
-    Endpoint:    "https://nyc3.digitaloceanspaces.com",
-    AccessKeyID: "your-access-key",
-    SecretKey:   "your-secret-key",
-})
+config := storage.S3Config{
+    Region:          "nyc3",
+    Bucket:          "my-space",
+    AccessKeyID:     "your-access-key",
+    SecretAccessKey: "your-secret-key",
+    EndpointURL:     "https://nyc3.digitaloceanspaces.com",
+}
 ```
 
-### Put Options
+### Content Type Detection
 
+`Save` and `SaveFromReader` automatically sniff the MIME type from the first 512 bytes of the uploaded content (via `http.DetectContentType`) and send it as the object's `ContentType` — there's no need to set it manually.
+
+### File Operations
+
+**Upload from a file path:**
 ```go
-type PutOptions struct {
-    // ContentType specifies the MIME type of the file
-    ContentType string
-    
-    // Public makes the file publicly accessible
-    Public bool
-}
+err := fileStorage.Save("./data/document.pdf", "documents/doc.pdf")
 ```
 
-**Upload with Options:**
+**Upload from an `io.Reader`:**
 ```go
-file, _ := os.Open("image.jpg")
-defer file.Close()
+f, _ := os.Open("image.jpg")
+defer f.Close()
 
-url, err := s3Storage.Put(context.Background(), "images/photo.jpg", file, &storage.PutOptions{
-    ContentType: "image/jpeg",
-    Public:      true,
-})
+err := fileStorage.SaveFromReader(f, "images/photo.jpg")
 ```
 
-## Integration with Fiber
-
-### File Upload Handler
-
+**Check if a file exists:**
 ```go
-package main
-
-import (
-    "github.com/budimanlai/go-pkg/storage"
-    "github.com/gofiber/fiber/v2"
-)
-
-var storageService storage.Storage
-
-func main() {
-    // Initialize storage
-    storageService, _ = storage.NewLocalStorage(storage.LocalStorageConfig{
-        BasePath: "./uploads",
-        BaseURL:  "http://localhost:3000/uploads",
-    })
-    
-    app := fiber.New()
-    
-    app.Post("/upload", uploadHandler)
-    app.Get("/files/:path", downloadHandler)
-    app.Delete("/files/:path", deleteHandler)
-    
-    app.Listen(":3000")
-}
-
-func uploadHandler(c *fiber.Ctx) error {
-    // Get file from form
-    file, err := c.FormFile("file")
-    if err != nil {
-        return c.Status(400).JSON(fiber.Map{
-            "error": "No file uploaded",
-        })
-    }
-    
-    // Open file
-    src, err := file.Open()
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{
-            "error": "Failed to open file",
-        })
-    }
-    defer src.Close()
-    
-    // Generate path
-    path := fmt.Sprintf("uploads/%s", file.Filename)
-    
-    // Upload to storage
-    url, err := storageService.Put(c.Context(), path, src, &storage.PutOptions{
-        ContentType: file.Header.Get("Content-Type"),
-        Public:      true,
-    })
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{
-            "error": "Failed to upload file",
-        })
-    }
-    
-    return c.JSON(fiber.Map{
-        "success": true,
-        "url":     url,
-    })
-}
-
-func downloadHandler(c *fiber.Ctx) error {
-    path := c.Params("path")
-    
-    // Get file from storage
-    reader, err := storageService.Get(c.Context(), path)
-    if err != nil {
-        return c.Status(404).JSON(fiber.Map{
-            "error": "File not found",
-        })
-    }
-    defer reader.Close()
-    
-    // Stream file to response
-    return c.SendStream(reader)
-}
-
-func deleteHandler(c *fiber.Ctx) error {
-    path := c.Params("path")
-    
-    // Delete file
-    err := storageService.Delete(c.Context(), path)
-    if err != nil {
-        return c.Status(500).JSON(fiber.Map{
-            "error": "Failed to delete file",
-        })
-    }
-    
-    return c.JSON(fiber.Map{
-        "success": true,
-        "message": "File deleted",
-    })
-}
+exists, err := fileStorage.Exists("images/photo.jpg")
 ```
 
-### Multiple File Upload
-
+**Delete a file:**
 ```go
-func uploadMultipleHandler(c *fiber.Ctx) error {
-    form, err := c.MultipartForm()
-    if err != nil {
-        return c.Status(400).JSON(fiber.Map{
-            "error": "Invalid form data",
-        })
-    }
-    
-    files := form.File["files"]
-    urls := make([]string, 0, len(files))
-    
-    for _, file := range files {
-        src, err := file.Open()
-        if err != nil {
-            continue
-        }
-        defer src.Close()
-        
-        path := fmt.Sprintf("uploads/%s", file.Filename)
-        url, err := storageService.Put(c.Context(), path, src, nil)
-        if err != nil {
-            continue
-        }
-        
-        urls = append(urls, url)
-    }
-    
-    return c.JSON(fiber.Map{
-        "success": true,
-        "urls":    urls,
-        "count":   len(urls),
-    })
-}
+err := fileStorage.Delete("images/photo.jpg")
 ```
 
-## Advanced Usage
+**Get a public URL:**
+```go
+url, err := fileStorage.GetURL("images/photo.jpg")
+// Built as: EndpointURL/Bucket/images/photo.jpg
+```
 
-### Factory Pattern for Multiple Backends
+**Get a signed (time-limited) URL:**
+```go
+signedURL, err := fileStorage.GetSignedURL("images/photo.jpg", 300) // expires in 300 seconds
+```
+
+## Choosing a Backend at Runtime
 
 ```go
 package main
 
 import (
-    "context"
-    "io"
     "os"
-    
-    "github.com/budimanlai/go-pkg/storage"
+
+    "github.com/budimanlai/go-pkg/v3/storage"
 )
 
-type StorageService struct {
-    storage storage.Storage
-}
-
-func NewStorageService() (*StorageService, error) {
-    var store storage.Storage
-    var err error
-    
-    // Choose backend based on environment
+func newFileStorage() *storage.Storage {
     if os.Getenv("STORAGE_TYPE") == "s3" {
-        store, err = storage.NewS3Storage(storage.S3StorageConfig{
-            Region:      os.Getenv("AWS_REGION"),
-            Bucket:      os.Getenv("S3_BUCKET"),
-            AccessKeyID: os.Getenv("AWS_ACCESS_KEY_ID"),
-            SecretKey:   os.Getenv("AWS_SECRET_ACCESS_KEY"),
+        backend := storage.NewS3Storage(storage.S3Config{
+            Region:          os.Getenv("AWS_REGION"),
+            Bucket:          os.Getenv("S3_BUCKET"),
+            AccessKeyID:     os.Getenv("AWS_ACCESS_KEY_ID"),
+            SecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+            EndpointURL:     os.Getenv("S3_ENDPOINT_URL"),
         })
-    } else {
-        store, err = storage.NewLocalStorage(storage.LocalStorageConfig{
-            BasePath: "./uploads",
-            BaseURL:  "http://localhost:3000/uploads",
-        })
+        return storage.NewStorage(backend)
     }
-    
-    if err != nil {
-        return nil, err
-    }
-    
-    return &StorageService{storage: store}, nil
-}
 
-func (s *StorageService) UploadFile(ctx context.Context, path string, file io.Reader) (string, error) {
-    return s.storage.Put(ctx, path, file, nil)
-}
-
-func (s *StorageService) DownloadFile(ctx context.Context, path string) (io.ReadCloser, error) {
-    return s.storage.Get(ctx, path)
-}
-
-func (s *StorageService) DeleteFile(ctx context.Context, path string) error {
-    return s.storage.Delete(ctx, path)
-}
-```
-
-### Context Timeout
-
-```go
-import "time"
-
-// Upload with timeout
-ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-defer cancel()
-
-url, err := storageService.Put(ctx, "large-file.zip", file, nil)
-```
-
-### Error Handling
-
-```go
-url, err := storageService.Put(ctx, "file.txt", file, nil)
-if err != nil {
-    switch {
-    case errors.Is(err, storage.ErrNotFound):
-        log.Println("File not found")
-    case errors.Is(err, storage.ErrPermission):
-        log.Println("Permission denied")
-    case errors.Is(err, context.DeadlineExceeded):
-        log.Println("Upload timeout")
-    default:
-        log.Println("Upload error:", err)
-    }
+    backend := storage.NewLocalStorage("./uploads", "http://localhost:3000/uploads")
+    return storage.NewStorage(backend)
 }
 ```
 
 ## Best Practices
 
-1. **Use Context for Timeout**
+1. **Use environment variables for credentials**
    ```go
-   ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-   defer cancel()
-   ```
-
-2. **Close Readers**
-   ```go
-   reader, err := storageService.Get(ctx, path)
-   if err != nil {
-       return err
-   }
-   defer reader.Close()
-   ```
-
-3. **Validate File Types**
-   ```go
-   allowedTypes := map[string]bool{
-       "image/jpeg": true,
-       "image/png":  true,
-   }
-   
-   if !allowedTypes[file.Header.Get("Content-Type")] {
-       return errors.New("invalid file type")
+   config := storage.S3Config{
+       AccessKeyID:     os.Getenv("AWS_ACCESS_KEY_ID"),
+       SecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
    }
    ```
 
-4. **Use Environment Variables for Credentials**
-   ```go
-   config := storage.S3StorageConfig{
-       AccessKeyID: os.Getenv("AWS_ACCESS_KEY_ID"),
-       SecretKey:   os.Getenv("AWS_SECRET_ACCESS_KEY"),
-   }
-   ```
-
-5. **Generate Unique Filenames**
+2. **Generate unique filenames** to avoid collisions
    ```go
    import "github.com/google/uuid"
-   
-   ext := filepath.Ext(file.Filename)
-   filename := uuid.New().String() + ext
-   path := fmt.Sprintf("uploads/%s", filename)
+
+   ext := filepath.Ext(originalFilename)
+   dest := fmt.Sprintf("uploads/%s%s", uuid.New().String(), ext)
    ```
 
-## Testing
+3. **Prefer `SaveFromReader`** when the source is already in memory or streamed (e.g. an HTTP upload body) instead of writing it to a temp file first.
 
-The storage interface makes testing easy with mocks:
+4. **Use signed URLs** (`GetSignedURL`) for private files that should only be accessible for a limited time, and `GetURL` only for objects that are actually public.
 
-```go
-type MockStorage struct {
-    PutFunc    func(ctx context.Context, path string, file io.Reader, options *storage.PutOptions) (string, error)
-    GetFunc    func(ctx context.Context, path string) (io.ReadCloser, error)
-    DeleteFunc func(ctx context.Context, path string) error
-}
-
-func (m *MockStorage) Put(ctx context.Context, path string, file io.Reader, options *storage.PutOptions) (string, error) {
-    return m.PutFunc(ctx, path, file, options)
-}
-
-// Implement other methods...
-
-// Usage in tests
-mockStorage := &MockStorage{
-    PutFunc: func(ctx context.Context, path string, file io.Reader, options *storage.PutOptions) (string, error) {
-        return "http://example.com/file.jpg", nil
-    },
-}
-```
-
-## Performance Tips
-
-1. **Stream Large Files** - Jangan load seluruh file ke memory
-2. **Use Context Timeout** - Prevent hanging requests
-3. **Implement Retry Logic** - For transient network errors
-4. **Cache File URLs** - If using S3 presigned URLs
-5. **Use CDN** - For frequently accessed files
-
-## Security Considerations
-
-1. **Validate File Extensions**
-2. **Check File Size Limits**
-3. **Scan for Malware** (for user uploads)
-4. **Use Presigned URLs** for temporary access
-5. **Set Proper ACLs** on S3 buckets
-6. **Never Commit Credentials** to repository
+5. **Never commit credentials** to the repository — pass them via environment variables or a secrets manager.
 
 ## See Also
 

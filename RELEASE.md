@@ -1,3 +1,8 @@
+v3.0.2
+- storage: auto-detect MIME type on S3 uploads instead of hardcoding "image/png"
+- storage: S3Config.PublicURL and PrivateURL removed; GetURL and GetSignedURL now build URLs from EndpointURL (breaking change)
+- docs: update README.md and docs/storage.md for the storage package changes
+
 v3.0.1
 - add function helpers/date.go: FormatDatetime, FormatDatetimePtr
 - add migration helpers: databases/migration.go
