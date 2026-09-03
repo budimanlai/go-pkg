@@ -12,22 +12,19 @@ func main() {
 
 func fileStorage() {
 	basePath := "./example"
-	// localStorage := storage.NewLocalStorage(basePath+"/uploads", "http://localhost:8080/uploads")
-	// fileStorage := storage.NewStorage(localStorage)
 
 	config := storage.S3Config{
-		Region:          "us-east-1",
-		Bucket:          "public",
-		AccessKeyID:     "admin",
-		SecretAccessKey: "admin123",
-		EndpointURL:     "http://localhost:8333",
-		PublicURL:       "http://localhost:8888/buckets/public",
+		Region:          "your_bucket_region",
+		Bucket:          "your_bucket_name",
+		AccessKeyID:     "your_access_key_id",
+		SecretAccessKey: "your_secret_access_key",
+		EndpointURL:     "your_endpoint_url",
 	}
 	s3Storage := storage.NewS3Storage(config)
 	fileStorage := storage.NewStorage(s3Storage)
 
-	dest := "image1.png"
-	source := basePath + "/data/" + dest
+	dest := "public/avatar/image1.png"
+	source := basePath + "/data/image1.png"
 
 	err := fileStorage.Save(source, dest)
 	if err != nil {
@@ -55,11 +52,4 @@ func fileStorage() {
 	} else {
 		fmt.Printf("File exists: %t\n", exists)
 	}
-
-	// err = fileStorage.Delete("custom_bucket/tabel_1.png")
-	// if err != nil {
-	// 	fmt.Printf("%s", err.Error())
-	// } else {
-	// 	fmt.Println("File deleted")
-	// }
 }

@@ -1,11 +1,12 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,8 +27,6 @@ type S3Config struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	EndpointURL     string
-	PublicURL       string
-	PrivateURL      string
 }
 
 type S3Storage struct {
@@ -90,17 +89,37 @@ func (s3s *S3Storage) SaveFromReader(reader io.Reader, destination string) error
 	key := filepath.ToSlash(filepath.Clean(destination))
 	key = strings.TrimPrefix(key, "/")
 
+	// Detect the content type from the file content
+	contentType, body, err := detectContentType(reader)
+	if err != nil {
+		return fmt.Errorf("failed to detect content type: %w", err)
+	}
+
 	// Upload the file to S3
-	_, err := s3s.uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(s3s.Config.Bucket),
-		Key:    aws.String(key),
-		Body:   reader,
+	_, err = s3s.uploader.Upload(context.TODO(), &s3.PutObjectInput{
+		Bucket:      aws.String(s3s.Config.Bucket),
+		Key:         aws.String(key),
+		Body:        body,
+		ContentType: aws.String(contentType),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to upload file to S3: %w", err)
 	}
 
 	return nil
+}
+
+// detectContentType sniffs the MIME type from the first bytes of reader,
+// returning a new reader that still yields the full original content.
+func detectContentType(reader io.Reader) (string, io.Reader, error) {
+	buf := make([]byte, 512)
+	n, err := io.ReadFull(reader, buf)
+	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+		return "", nil, err
+	}
+
+	contentType := http.DetectContentType(buf[:n])
+	return contentType, io.MultiReader(bytes.NewReader(buf[:n]), reader), nil
 }
 
 func (s3s *S3Storage) Delete(path string) error {
@@ -156,12 +175,11 @@ func (s3s *S3Storage) GetURL(path string) (string, error) {
 	// Remove leading slash if exists to avoid double slashes in URL
 	cleanPath = strings.TrimPrefix(cleanPath, "/")
 
-	// Combine base URL with path
-	urlStr := s3s.Config.PublicURL
-	if !strings.HasSuffix(urlStr, "/") && cleanPath != "" {
-		urlStr += "/"
+	// Combine endpoint URL with bucket and path (path-style addressing)
+	urlStr := strings.TrimSuffix(s3s.Config.EndpointURL, "/") + "/" + s3s.Config.Bucket
+	if cleanPath != "" {
+		urlStr += "/" + cleanPath
 	}
-	urlStr += cleanPath
 
 	return urlStr, nil
 }
@@ -178,44 +196,6 @@ func (s3s *S3Storage) GetSignedURL(path string, expirySeconds int64) (string, er
 	}, s3.WithPresignExpires((time.Duration(expirySeconds) * time.Second)))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate signed URL: %w", err)
-	}
-
-	// If PublicURL is provided, replace with custom domain and path
-	if s3s.Config.PrivateURL != "" {
-		parsedPresigned, err := url.Parse(presignedURL.URL)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse presigned URL: %w", err)
-		}
-
-		// Parse the public URL
-		parsedPublic, err := url.Parse(s3s.Config.PublicURL)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse public URL: %w", err)
-		}
-
-		// Build new URL with public domain and path
-		// PublicURL might have path prefix like /storage/secure/
-		publicPath := strings.TrimSuffix(parsedPublic.Path, "/")
-
-		// Combine public path with file key
-		finalPath := publicPath
-		if key != "" {
-			if publicPath != "" {
-				finalPath = publicPath + "/" + key
-			} else {
-				finalPath = "/" + key
-			}
-		}
-
-		// Build the final URL
-		finalURL := url.URL{
-			Scheme:   parsedPublic.Scheme,
-			Host:     parsedPublic.Host,
-			Path:     finalPath,
-			RawQuery: parsedPresigned.RawQuery, // Keep signature and query params
-		}
-
-		return finalURL.String(), nil
 	}
 
 	return presignedURL.URL, nil
